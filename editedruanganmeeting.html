@@ -59,7 +59,7 @@
 
             <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-600">
                 <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <i class="far fa-calendar-plus text-blue-600"></i> Form Peminjaman Baru
+                    <i class="far fa-calendar-plus text-blue-600"></i> Form Peminjaman
                 </h3>
                 
                 <form id="PeminjamanForm" onsubmit="handlePeminjaman(event)" class="space-y-4">
@@ -107,7 +107,7 @@
                             <input type="date" id="startDate" required class="w-full border rounded-lg p-2" onchange="checkAvailability()">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1" id="lblEndDate">Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span></label>
                             <input type="date" id="endDate" class="w-full border rounded-lg p-2" onchange="checkAvailability()">
                         </div>
                         <div>
@@ -127,8 +127,11 @@
                         <p class="text-xs text-red-500 mt-1">*Akan memblokir mobil yang dipilih pada dropdown di atas dari peminjam (00:00 - 23:59).</p>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
+                    <button type="submit" id="submitBtnMain" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
                         Konfirmasi Peminjaman
+                    </button>
+                    <button type="button" id="cancelEditBtn" onclick="resetFormState()" class="hidden w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg shadow transition mt-2">
+                        Batal Edit
                     </button>
                 </form>
             </div>
@@ -176,13 +179,13 @@
                 <p class="font-bold mb-3 text-red-600">Saya selaku peminjam menyetujui untuk :</p>
                 <ol class="list-decimal pl-5 space-y-3 text-justify">
                     <li>Bertanggung jawab sepenuhnya terhadap kehilangan dan kerusakan kendaraan selama pemakaian.</li>
-                    <li>Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat (durian), dan menjaga kebersihan.</li>
-                    <li>Tidak mengemudikan kendaraan diatas batas maksimum kecepatan, memiliki dan membawa SIM yang berlaku, serta mentaati peraturan lalu lintas.</li>
+                    <li>Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat, dan menjaga kebersihan.</li>
+                    <li>Tidak mengemudikan kendaraan diatas batas maksimum kecepatan dan mentaati peraturan lalu lintas.</li>
                     <li>Mengisi kembali BBM yang terpakai sesuai dengan aturan (minimal seperti semula sebelum memakai).</li>
                     <li>Mengembalikan mobil sesuai dengan tanggal dan waktu yang sudah tertera pada form.</li>
-                    <li>Apabila terjadi keterlambatan pengembalian mobil dan/atau ketidaksesuaian pengisian BBM, maka permintaan peminjaman mobil bagi seluruh karyawan di divisi terkait akan ditangguhkan selama 30 (tiga puluh) hari.</li>
+                    <li>Apabila terjadi keterlambatan pengembalian mobil, permintaan peminjaman mobil ditangguhkan selama 30 hari.</li>
                     <li>Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : Lita).</li>
-                    <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan bbm dikirim by WA.</li>
+                    <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan BBM dikirim by WA.</li>
                 </ol>
             </div>
             <div class="p-4 border-t bg-gray-100 flex flex-col md:flex-row justify-between items-center gap-3 rounded-b-xl">
@@ -200,23 +203,20 @@
     </div>
 
     <div id="otpModal" style="display: none; z-index: 9999;" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold mb-2">Verifikasi Batal Pesanan</h3>
-            <p class="text-sm text-gray-600 mb-4" id="otpText">Masukkan email Anda untuk menerima OTP pembatalan.</p>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <h3 class="text-lg font-bold mb-2 border-b pb-2">Verifikasi OTP</h3>
             
-            <div id="otpStep1">
-                <input type="email" id="verifyEmail" class="w-full border rounded-lg p-2 mb-4" placeholder="Email terdaftar saat pesan">
-                <div class="flex justify-end gap-2">
-                    <button onclick="closeOtpModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Tutup</button>
-                    <button onclick="requestOtp()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Kirim OTP</button>
-                </div>
+            <div id="otpStep1" class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-blue-600 text-4xl mb-3"></i>
+                <p class="text-sm text-gray-600 font-medium" id="otpTextLoading">Mencari Data & Mengirim OTP...</p>
             </div>
             
-            <div id="otpStep2" class="hidden">
-                <input type="text" id="verifyOtpInput" class="w-full border rounded-lg p-2 mb-4 tracking-widest text-center text-lg font-bold" placeholder="Masukkan 6 Digit OTP">
-                <div class="flex justify-end gap-2">
-                    <button onclick="closeOtpModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Batal</button>
-                    <button onclick="submitOtp()" class="bg-red-600 text-white px-4 py-2 rounded-lg">Konfirmasi</button>
+            <div id="otpStep2" class="hidden py-4">
+                <p class="text-sm text-gray-700 mb-4 text-center bg-blue-50 p-3 rounded" id="otpText"></p>
+                <input type="text" id="verifyOtpInput" class="w-full border rounded-lg p-3 mb-4 tracking-[0.5em] text-center text-xl font-bold bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="• • • • • •" maxlength="6">
+                <div class="flex justify-end gap-2 mt-4">
+                    <button onclick="closeOtpModal()" class="bg-gray-200 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Batal</button>
+                    <button onclick="submitOtpAction()" class="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition font-semibold shadow" id="otpConfirmBtn">Konfirmasi</button>
                 </div>
             </div>
         </div>
@@ -245,9 +245,12 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let selectedDateForPeminjaman = "";
+        
         let tempBookingData = null;
-        let selectedIdForOtp = null; 
-        window.isEditFlow = false; // Penanda alur edit atau hapus
+        let tempEditingData = null; // Menyimpan ID dan OTP jika sedang mode Edit
+        
+        let actionType = '';
+        let actionId = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
@@ -302,41 +305,27 @@
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
                 
-                if (textData.trim().startsWith('<')) throw new Error("URL Script salah, butuh login, atau akses diblokir.");
+                if (textData.trim().startsWith('<')) throw new Error("URL Salah/Akses Diblokir.");
                 const parsedData = JSON.parse(textData);
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
 
                 Peminjamans = rawPeminjamans.map(b => {
                     let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
                     let textTujuan = keyTujuan ? b[keyTujuan] : "-";
-                    let emailKey = Object.keys(b).find(k => k.toLowerCase().includes('email'));
-                    return {
-                        ...b,
-                        tujuan: textTujuan,
-                        email: emailKey ? b[emailKey] : "",
-                        date: formatDisplayDate(b.date),
-                        start: formatDisplayTime(b.start),
-                        end: formatDisplayTime(b.end)
-                    };
+                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
                 });
 
                 dataKaryawan = parsedData.karyawan || [];
                 let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
                 
-                if(uniqueDivisi.length > 0) {
-                    populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
-                } else {
-                    document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Karyawan Kosong</option>`;
-                }
+                if(uniqueDivisi.length > 0) populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
+                else document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Kosong</option>`;
+                
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
-
-                updateCalendar();
-                renderPeminjamanList();
-                checkAvailability();
+                updateCalendar(); renderPeminjamanList(); checkAvailability();
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data. Cek Apps Script Anda.</div>`;
+                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
             }
         }
 
@@ -349,7 +338,8 @@
                 const carVal = carSelect.options[i].value;
                 if(!originalCarTexts[carVal]) continue;
 
-                const isBlocked = Peminjamans.some(b => b.date === dateStr && b.car === carVal && b.type === 'block');
+                const isBlocked = Peminjamans.some(b => b.date === dateStr && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
+                
                 if(isBlocked) {
                     carSelect.options[i].disabled = true;
                     carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
@@ -378,8 +368,7 @@
             
             const filteredKaryawan = dataKaryawan.filter(k => (k.divisi || k.Divisi || Object.values(k)[1]) === selectedDivisi);
             if (filteredKaryawan.length === 0) {
-                nameSelect.innerHTML = `<option value="Manual Input">Manual Input</option>`;
-                return;
+                nameSelect.innerHTML = `<option value="Manual Input">Manual Input</option>`; return;
             }
             filteredKaryawan.forEach(k => {
                 let namaKaryawan = k.nama || k.Nama || Object.values(k)[0];
@@ -387,23 +376,11 @@
             });
         }
 
-        async function savePeminjamanToDatabase(PeminjamanData) {
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'add', ...PeminjamanData })
-                });
-            } catch (error) { console.error('Error saving:', error); }
-        }
-
         function setupYearSelect() {
             const select = document.getElementById('yearSelect');
-            if(!select) return;
             select.innerHTML = "";
             for (let i = currentYear - 1; i <= currentYear + 3; i++) {
-                let opt = document.createElement('option');
-                opt.value = i; opt.innerHTML = i;
+                let opt = document.createElement('option'); opt.value = i; opt.innerHTML = i;
                 if(i === currentYear) opt.selected = true;
                 select.appendChild(opt);
             }
@@ -425,14 +402,9 @@
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dayPeminjamans = Peminjamans.filter(b => b.date === dateStr);
                 
-                let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
-                let borderClass = "border-gray-200";
-                
-                if (dayPeminjamans.length >= 3) {
-                    bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300";
-                } else if (dayPeminjamans.length > 0) {
-                    bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
-                }
+                let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700"; let borderClass = "border-gray-200";
+                if (dayPeminjamans.length >= 3) { bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300"; } 
+                else if (dayPeminjamans.length > 0) { bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300"; }
 
                 calendarGrid.innerHTML += `
                     <div onclick="window.selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
@@ -463,7 +435,7 @@
                         let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
 
                         modalContent.innerHTML += `
-                            <div class="p-4 rounded-lg border ${cardColor} text-sm flex flex-col">
+                            <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
                                     <span>${b.name}</span>
                                     ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir Admin</span>' : ''}
@@ -473,9 +445,9 @@
                                     <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4"></i> <span>${b.start} - ${b.end} WIB</span></div>
                                     ${!isBlock ? `<div class="flex items-start gap-2 mt-1"><i class="fas fa-bullseye text-purple-500 w-4"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                                 </div>
-                                <div class="mt-3 pt-3 border-t ${isBlock ? 'border-gray-700' : 'border-gray-200'} flex justify-end gap-4">
-                                    <button onclick="handleEditAction('${b.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-wider transition">Edit</button>
-                                    <button onclick="openOtpModal('${b.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider transition">Hapus</button>
+                                <div class="flex justify-end gap-3 mt-3 pt-3 border-t border-gray-200 opacity-90">
+                                    <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-3 py-1.5 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
+                                    <button onclick="initAction('${b.id}', 'delete')" class="text-red-600 hover:text-red-800 text-xs font-semibold px-3 py-1.5 bg-red-50 rounded hover:bg-red-100 transition flex items-center"><i class="fas fa-trash mr-1"></i> Hapus</button>
                                 </div>
                             </div>
                         `;
@@ -497,7 +469,7 @@
 
         async function handlePeminjaman(e) {
             e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('submitBtnMain');
 
             const name = document.getElementById('empName').value || "-";
             const divisi = document.getElementById('empDivisi').value || "-";
@@ -514,6 +486,29 @@
 
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
+
+            // ===== PENANGANAN SUBMIT EDIT =====
+            if (tempEditingData) {
+                btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
+                btn.disabled = true;
+
+                const editPayload = {
+                    action: 'edit', id: tempEditingData.id, otp: tempEditingData.otp,
+                    name, divisi, wa: empWa, email, car, tujuan, date: startDateStr, start, end, type: 'Peminjaman'
+                };
+
+                try {
+                    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(editPayload) });
+                    const response = await res.json();
+                    if(response.status === 'success') {
+                        alert("Perubahan berhasil disimpan!");
+                        fetchPeminjamans(); 
+                        resetFormState();
+                    } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = "Simpan Perubahan"; btn.disabled = false; }
+                } catch(e) { alert("Error koneksi."); btn.innerHTML = "Simpan Perubahan"; btn.disabled = false; }
+                return;
+            }
+            // ===================================
 
             const startDate = new Date(startDateStr);
             const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
@@ -535,10 +530,7 @@
 
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => b.date === date && b.car === car && (start < b.end && end > b.start));
-                if (conflict && !isAdmin) {
-                    hasConflict = true;
-                    conflictDates.push(`${date} (${conflict.start} - ${conflict.end})`);
-                }
+                if (conflict && !isAdmin) { hasConflict = true; conflictDates.push(`${date} (${conflict.start} - ${conflict.end})`); }
             }
 
             if (hasConflict) { alert(`Jadwal bentrok:\n${conflictDates.join('\n')}`); return; }
@@ -566,157 +558,133 @@
                 email: isAdmin && isBlock ? "-" : email,
                 car: car, 
                 tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
-                date: date, 
-                start: start, 
-                end: end,
+                date: date, start: start, end: end,
                 type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
             Peminjamans.push(...newPeminjamans);
-            updateCalendar();
-            renderPeminjamanList();
-            checkAvailability(); 
+            updateCalendar(); renderPeminjamanList(); checkAvailability(); 
             
             try {
-                await Promise.all(newPeminjamans.map(b => savePeminjamanToDatabase(b)));
+                await Promise.all(newPeminjamans.map(b => fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...b }) })));
                 setTimeout(() => { fetchPeminjamans(); }, 3000);
             } catch(e) {}
 
             alert(isAdmin && isBlock ? `Berhasil diblokir!` : "Peminjaman Berhasil Dicatat! Notifikasi dikirim ke Email.");
-            document.getElementById('PeminjamanForm').reset();
-            filterKaryawanByDivisi(); 
-            btn.innerHTML = "Konfirmasi Peminjaman"; btn.disabled = false;
+            resetFormState();
             tempBookingData = null;
         }
 
-        // ================= FLOW OTP UNTUK EDIT / BATAL =================
-        function handleEditAction(id) {
-            const b = Peminjamans.find(x => x.id === id);
-            if(!b) return;
-
-            // Memasukkan data ke form untuk persiapan edit
-            document.getElementById('empDivisi').value = b.divisi || "";
-            filterKaryawanByDivisi();
-            setTimeout(() => { document.getElementById('empName').value = b.name; }, 150);
-            document.getElementById('empWa').value = b.wa || '';
-            document.getElementById('empEmail').value = b.email || '';
-            document.getElementById('carSelect').value = b.car;
-            document.getElementById('tujuanPinjam').value = b.tujuan;
-            document.getElementById('startDate').value = b.date;
-            document.getElementById('endDate').value = "";
-            document.getElementById('startTime').value = b.start;
-            document.getElementById('endTime').value = b.end;
-
+        // ================= ALUR OTP EDIT & DELETE OTOMATIS =================
+        function initAction(id, type) {
+            actionId = id; actionType = type;
+            window.closeModal(); 
+            
             if (isAdmin) {
-                if(confirm("Lanjutkan edit pesanan ini (Akses Admin)? Pesanan lama akan dihapus.")) {
-                    deleteDirect(id);
-                    document.getElementById('PeminjamanModal').style.display = 'none';
-                    window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
-                }
+                if (type === 'delete') { if(confirm("Hapus pesanan ini (Admin)?")) deleteDirect(id, "admin"); } 
+                else { executeEditSetup(id, "admin"); }
                 return;
             }
 
-            window.isEditFlow = true; 
-            selectedIdForOtp = id;
-            document.getElementById('PeminjamanModal').style.display = 'none'; 
             document.getElementById('otpModal').style.display = 'flex';
             document.getElementById('otpStep1').style.display = 'block';
             document.getElementById('otpStep2').style.display = 'none';
-            document.getElementById('verifyEmail').value = b.email || '';
-            
-            document.querySelector('#otpModal h3').innerText = "Verifikasi Edit Pesanan";
-            document.getElementById('otpText').innerText = "Kami akan mengirimkan OTP ke email ini. Setelah terverifikasi, pesanan lama dihapus dan Anda bisa menyimpan perubahan di form.";
-            document.querySelector('#otpStep2 button.bg-red-600').innerText = "Verifikasi & Edit";
-        }
 
-        function openOtpModal(id) {
-            if(isAdmin) {
-                if(confirm("Hapus pesanan ini secara langsung (Akses Admin)?")) { deleteDirect(id); }
-                return;
-            }
-            window.isEditFlow = false;
-            selectedIdForOtp = id;
-            document.getElementById('PeminjamanModal').style.display = 'none'; 
-            document.getElementById('otpModal').style.display = 'flex';
-            document.getElementById('otpStep1').style.display = 'block';
-            document.getElementById('otpStep2').style.display = 'none';
-            document.getElementById('verifyEmail').value = "";
-            
-            document.querySelector('#otpModal h3').innerText = "Verifikasi Batal Pesanan";
-            document.getElementById('otpText').innerText = "Masukkan email terdaftar untuk menerima OTP pembatalan.";
-            document.querySelector('#otpStep2 button.bg-red-600').innerText = "Konfirmasi Hapus";
-        }
-
-        function closeOtpModal() {
-            document.getElementById('otpModal').style.display = 'none';
-            selectedIdForOtp = null;
-        }
-
-        async function requestOtp() {
-            const email = document.getElementById('verifyEmail').value;
-            if(!email) return alert("Email harus diisi!");
-            
-            const btn = document.querySelector('#otpStep1 button.bg-blue-600');
-            btn.innerText = "Mengirim..."; btn.disabled = true;
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'requestOTP', id: selectedIdForOtp, email: email })
-                });
-                const response = await res.json();
-                if(response.status === "success") {
+            fetch(SCRIPT_URL, {
+                method: 'POST', body: JSON.stringify({ action: 'requestOTP', id: id })
+            }).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
                     document.getElementById('otpStep1').style.display = 'none';
                     document.getElementById('otpStep2').style.display = 'block';
-                    document.getElementById('otpText').innerText = "Cek email Anda untuk kode 6 digit OTP.";
+                    document.getElementById('otpText').innerHTML = `Masukkan 6 Digit OTP yang telah dikirim ke email <b>${res.email}</b>.`;
+                    document.getElementById('verifyOtpInput').value = "";
                 } else {
-                    alert(response.message || "Gagal mencocokkan email.");
+                    closeOtpModal(); alert(res.message || "Gagal memuat OTP.");
                 }
-            } catch(e) { alert("Error koneksi."); }
-            btn.innerText = "Kirim OTP"; btn.disabled = false;
+            }).catch(e => { closeOtpModal(); alert("Error koneksi database."); });
         }
 
-        async function submitOtp() {
-            const otp = document.getElementById('verifyOtpInput').value;
+        function closeOtpModal() { document.getElementById('otpModal').style.display = 'none'; actionId = null; }
+
+        async function submitOtpAction() {
+            const otp = document.getElementById('verifyOtpInput').value.trim();
             if(!otp) return alert("OTP wajib diisi!");
             
-            const btn = document.querySelector('#otpStep2 button.bg-red-600');
+            const btn = document.getElementById('otpConfirmBtn');
+            const originalText = btn.innerText;
             btn.innerText = "Memproses..."; btn.disabled = true;
 
             try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'verifyOTP', id: selectedIdForOtp, otp: otp })
-                });
-                const response = await res.json();
-                if(response.status === "success") {
-                    Peminjamans = Peminjamans.filter(b => b.id != selectedIdForOtp);
-                    updateCalendar();
-                    renderPeminjamanList();
-                    closeOtpModal();
-
-                    if(window.isEditFlow) {
-                        alert("Verifikasi berhasil! Silakan perbarui data pada form di bawah dan klik 'Konfirmasi Peminjaman'.");
-                        window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
-                    } else {
-                        alert("Pesanan berhasil dibatalkan dan kalender telah diperbarui!");
-                    }
-                } else {
-                    alert(response.message || "OTP Salah!");
+                if (actionType === 'delete') {
+                    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: actionId, otp: otp }) });
+                    const response = await res.json();
+                    if(response.status === "success") {
+                        alert("Pesanan berhasil dihapus!");
+                        Peminjamans = Peminjamans.filter(b => b.id != actionId);
+                        updateCalendar(); renderPeminjamanList(); closeOtpModal();
+                    } else { alert(response.message || "OTP Salah!"); }
+                } else if (actionType === 'edit') {
+                    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
+                    const response = await res.json();
+                    if(response.status === "success") {
+                        closeOtpModal(); executeEditSetup(actionId, otp);
+                    } else { alert(response.message || "OTP Salah!"); }
                 }
             } catch(e) { alert("Error koneksi."); }
-            btn.innerText = window.isEditFlow ? "Verifikasi & Edit" : "Konfirmasi Hapus"; 
-            btn.disabled = false;
+            btn.innerText = originalText; btn.disabled = false;
         }
 
-        async function deleteDirect(id) {
+        async function deleteDirect(id, otp) {
             Peminjamans = Peminjamans.filter(b => b.id != id);
-            updateCalendar();
-            renderPeminjamanList();
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'delete', id: id })
-            });
+            updateCalendar(); renderPeminjamanList();
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id, otp: otp }) });
+        }
+
+        function executeEditSetup(id, otp) {
+            const b = Peminjamans.find(x => x.id == id);
+            if(!b) return;
+            
+            document.getElementById('empDivisi').value = b.divisi;
+            filterKaryawanByDivisi();
+            setTimeout(() => { document.getElementById('empName').value = b.name; }, 300);
+            document.getElementById('empWa').value = b.wa;
+            document.getElementById('empEmail').value = b.email || "";
+            document.getElementById('carSelect').value = b.car;
+            document.getElementById('tujuanPinjam').value = b.tujuan;
+            document.getElementById('startDate').value = b.date;
+            document.getElementById('startTime').value = b.start;
+            document.getElementById('endTime').value = b.end;
+
+            // Kunci fitur multi-hari selama edit (demi keamanan record ID tunggal)
+            document.getElementById('endDate').value = "";
+            document.getElementById('endDate').disabled = true;
+            document.getElementById('endDate').classList.add('bg-gray-200');
+            document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan saat Edit)</span>`;
+
+            tempEditingData = { id: id, otp: otp };
+            
+            const submitBtn = document.getElementById('submitBtnMain');
+            submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
+            submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            
+            window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function resetFormState() {
+            document.getElementById('PeminjamanForm').reset();
+            document.getElementById('endDate').disabled = false;
+            document.getElementById('endDate').classList.remove('bg-gray-200');
+            document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span>`;
+            
+            tempEditingData = null;
+            filterKaryawanByDivisi();
+            
+            const submitBtn = document.getElementById('submitBtnMain');
+            submitBtn.innerHTML = "Konfirmasi Peminjaman";
+            submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            submitBtn.disabled = false;
+            document.getElementById('cancelEditBtn').classList.add('hidden');
         }
         // ===============================================================
 
@@ -728,12 +696,9 @@
             
             let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
             countSpan.innerText = filtered.length;
-
             filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
 
-            if (filtered.length === 0) {
-                list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return;
-            }
+            if (filtered.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return; }
 
             filtered.forEach(b => {
                 const isBlock = b.type === 'block';
@@ -741,7 +706,7 @@
                 let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
 
                 list.innerHTML += `
-                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'} flex flex-col">
+                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
                             <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
                         </div>
@@ -749,15 +714,13 @@
                             <div class="flex items-center"><i class="fas fa-car w-5 text-center text-blue-500"></i> <span>${b.car}${warnaLabel}</span></div>
                             ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                         </div>
-                        <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex flex-col md:flex-row md:justify-between items-center gap-2">
-                            <div class="flex gap-4 w-full md:w-auto">
-                                <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
-                                <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
-                            </div>
-                            <div class="flex justify-end gap-3 w-full md:w-auto">
-                                <button onclick="handleEditAction('${b.id}')" class="text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider transition">Edit</button>
-                                <button onclick="openOtpModal('${b.id}')" class="text-red-600 hover:text-red-800 font-bold uppercase tracking-wider transition">Hapus</button>
-                            </div>
+                        <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex gap-4">
+                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
+                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-3 pt-3 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-90">
+                            <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2 py-1 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
+                            <button onclick="initAction('${b.id}', 'delete')" class="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition flex items-center"><i class="fas fa-trash mr-1"></i> Hapus</button>
                         </div>
                     </div>
                 `;
@@ -785,9 +748,7 @@
             renderPeminjamanList();
         }
 
-        function printPDF() {
-            window.print();
-        }
+        function printPDF() { window.print(); }
     </script>
 </body>
 </html>
