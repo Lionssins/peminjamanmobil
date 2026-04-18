@@ -120,6 +120,10 @@
                         </div>
                     </div>
 
+                    <div id="timeConflictError" class="hidden col-span-1 md:col-span-4 p-3 bg-red-100 border-l-4 border-red-600 text-red-700 text-sm font-bold rounded">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> BENTROK! Waktu yang Anda masukkan sudah terisi. Silakan cek visualisasi di bawah dan ubah jam.
+                    </div>
+
                     <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         <label class="flex items-center gap-2 font-bold cursor-pointer">
                             <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Mobil Spesifik (Admin)
@@ -137,14 +141,31 @@
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-500">
-                <h3 class="text-xl font-bold mb-2 flex items-center gap-2 text-gray-700">
-                    <i class="fas fa-chart-gantt text-green-600"></i> Visualisasi Jadwal Mobil
+                <h3 class="text-lg md:text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                    <i class="fas fa-route text-green-600"></i> Visualisasi Jam Ketersediaan
                 </h3>
-                <p class="text-xs text-gray-500 mb-6 bg-gray-50 p-2 rounded border border-gray-200">
-                    <i class="fas fa-info-circle text-blue-500"></i> Data di bawah menunjukkan jadwal pemakaian mobil pada tanggal: <b id="timelineDateLabel" class="text-blue-700">-</b>.
-                </p>
-                <div id="timelineContainer" class="space-y-2">
-                    <div class="text-center text-gray-400 py-4"><i class='fas fa-spinner fa-spin text-2xl mb-2'></i><br>Memuat Visualisasi...</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Pilih Tanggal</label>
+                        <input type="date" id="timelineDate" class="w-full border rounded-lg p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-green-500" onchange="renderTimeline()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Pilih Mobil</label>
+                        <select id="timelineCar" class="w-full border rounded-lg p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-green-500" onchange="renderTimeline()">
+                            <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
+                            <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
+                            <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="relative w-full h-16 md:h-20 bg-green-500 rounded-lg overflow-hidden border border-gray-300 shadow-inner" id="timelineContainer">
+                    </div>
+                
+                <div class="mt-4 flex gap-4 text-xs font-bold justify-center">
+                    <span class="flex items-center gap-1"><div class="w-4 h-4 bg-green-500 rounded border border-green-700"></div> KOSONG (Bisa Dipinjam)</span>
+                    <span class="flex items-center gap-1"><div class="w-4 h-4 bg-red-600 rounded border border-red-800"></div> DIPAKAI</span>
                 </div>
             </div>
 
@@ -233,15 +254,6 @@
         </div>
     </div>
 
-    <div id="conflictToast" class="fixed top-24 left-1/2 transform -translate-x-1/2 md:top-5 md:left-auto md:right-5 md:translate-x-0 bg-red-600 text-white px-5 py-4 rounded-xl shadow-2xl transition-all duration-300 translate-y-[-150%] md:translate-y-0 md:translate-x-[120%] opacity-0 z-[10000] flex items-start gap-4 max-w-[90vw] md:max-w-sm border-l-4 border-yellow-300">
-        <i class="fas fa-exclamation-circle text-3xl text-yellow-300 mt-1"></i>
-        <div class="flex-1">
-            <h4 class="font-bold text-base mb-1">Peringatan: Jadwal Bentrok!</h4>
-            <p id="conflictToastMsg" class="text-xs leading-relaxed text-red-50"></p>
-        </div>
-        <button onclick="hideConflictToast()" class="text-white hover:text-yellow-200 font-bold text-xl leading-none ml-2">&times;</button>
-    </div>
-
     <script>
         // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-ALSIGlcHJO3Spr5lfgnEhgepSiNicsxGdYLvth0PwslBsu401a8oRJbQbL2g4JS/exec'; 
@@ -265,19 +277,17 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let selectedDateForPeminjaman = "";
+        let lastAlertedConflict = false; // State untuk cegah spam alert
         
         let tempBookingData = null;
         let tempEditingData = null; 
-        
         let actionType = '';
         let actionId = '';
-        let toastTimeout;
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
             document.getElementById('monthSelect').value = currentMonth;
-            document.getElementById('startDate').value = formatDisplayDate(today); // Set form ke hari ini by default
-            
+            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
             fetchPeminjamans();
 
             document.getElementById('isBlock').addEventListener('change', function() {
@@ -287,27 +297,10 @@
                 if(isChecked) {
                     document.getElementById('startTime').value = "00:00";
                     document.getElementById('endTime').value = "23:59";
-                    checkAvailability(); // Picu ulang visual saat admin klik blokir
                 }
             });
         });
 
-        // ---------------- ALUR NOTIFIKASI TOAST ----------------
-        function showConflictToast(msg) {
-            document.getElementById('conflictToastMsg').innerText = msg;
-            const toast = document.getElementById('conflictToast');
-            toast.classList.remove('translate-y-[-150%]', 'md:translate-x-[120%]', 'opacity-0');
-            
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { hideConflictToast(); }, 7000);
-        }
-
-        function hideConflictToast() {
-            const toast = document.getElementById('conflictToast');
-            toast.classList.add('translate-y-[-150%]', 'md:translate-x-[120%]', 'opacity-0');
-        }
-
-        // ---------------- FORMATTING WAKTU ----------------
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
@@ -317,13 +310,10 @@
                 }
                 if (typeof val === 'string' && val.includes(':')) {
                     let str = val.toLowerCase().trim();
-                    let isPM = str.includes('pm');
-                    let isAM = str.includes('am');
+                    let isPM = str.includes('pm'), isAM = str.includes('am');
                     str = str.replace(/[a-z]/gi, '').trim();
                     let parts = str.split(':');
-                    let h = parseInt(parts[0], 10) || 0;
-                    let m = parseInt(parts[1], 10) || 0;
-                    
+                    let h = parseInt(parts[0], 10) || 0, m = parseInt(parts[1], 10) || 0;
                     if (isPM && h < 12) h += 12;
                     if (isAM && h === 12) h = 0;
                     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -337,128 +327,82 @@
                 if (!val) return "-";
                 let d = new Date(val);
                 if (isNaN(d.getTime())) return String(val).split('T')[0];
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             } catch(e) { return val; }
         }
 
-        function formatDisplayDateID(dateStr) {
-            try {
-                const d = new Date(dateStr);
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                return d.toLocaleDateString('id-ID', options);
-            } catch(e) { return dateStr; }
-        }
-
-        function timeToMins(timeStr) {
-            if (!timeStr || !timeStr.includes(':')) return 0;
-            let parts = timeStr.split(':');
-            return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
-        }
-
-        function getDateArray(startDateStr, endDateStr) {
-            const dateArray = [];
-            let loopDate = new Date(startDateStr);
-            let endD = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
-            if (endD < loopDate) endD = loopDate;
-            
-            while (loopDate <= endD) {
-                const yyyy = loopDate.getFullYear();
-                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(loopDate.getDate()).padStart(2, '0');
-                dateArray.push(`${yyyy}-${mm}-${dd}`);
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-            return dateArray;
-        }
-
-        // ---------------- PENGAMBILAN DATA ----------------
         async function fetchPeminjamans() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
-                
-                if (textData.trim().startsWith('<')) throw new Error("URL Salah/Akses Diblokir.");
+                if (textData.trim().startsWith('<')) throw new Error("URL Salah.");
                 const parsedData = JSON.parse(textData);
+                
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
-
                 Peminjamans = rawPeminjamans.map(b => {
                     let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
-                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
-                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
+                    return { ...b, tujuan: keyTujuan ? b[keyTujuan] : "-", date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
                 });
 
                 dataKaryawan = parsedData.karyawan || [];
                 let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
-                
                 if(uniqueDivisi.length > 0) populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
-                else document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Kosong</option>`;
                 
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
-                
-                updateCalendar(); 
-                renderPeminjamanList(); 
-                checkAvailability(); // Memanggil render visual timeline
+                updateCalendar(); renderPeminjamanList(); 
+
+                // Setup awal Visualisasi Timeline mengikuti hari ini atau data yg ada
+                let todayStr = formatDisplayDate(new Date());
+                document.getElementById('timelineDate').value = document.getElementById('startDate').value || todayStr;
+                renderTimeline();
+
             } catch (error) {
-                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
+                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 rounded p-2'>❌ Gagal menarik data.</div>`;
             }
         }
 
-        // ---------------- RENDER TIMELINE VISUAL ----------------
-        function renderTimeline(dateStr) {
+        // FUNGSI RENDER VISUALISASI TIMELINE BARU
+        window.renderTimeline = function() {
+            const date = document.getElementById('timelineDate').value;
+            const car = document.getElementById('timelineCar').value;
             const container = document.getElementById('timelineContainer');
-            if(!container) return;
             
-            document.getElementById('timelineDateLabel').innerText = formatDisplayDateID(dateStr);
-            container.innerHTML = "";
-            
-            const cars = Object.keys(carDetails);
-            
-            cars.forEach(carVal => {
-                const dayPeminjamans = Peminjamans.filter(b => b.date === dateStr && b.car === carVal);
-                
-                let trackHtml = `
-                <div class="mb-5">
-                    <div class="text-xs font-bold text-gray-700 mb-1 flex items-center gap-2">
-                        <i class="fas fa-car-side text-blue-500"></i> ${originalCarTexts[carVal]}
+            // Render skala jam background (00:00 - 24:00)
+            let html = ``;
+            for(let i=0; i<=24; i+=2) {
+                let left = (i/24)*100;
+                html += `<div class="absolute top-0 bottom-0 border-l border-white opacity-40" style="left: ${left}%"></div>`;
+                if (i < 24) html += `<div class="absolute bottom-1 text-[8px] md:text-[10px] text-white opacity-90 font-bold" style="left: calc(${left}% + 2px)">${String(i).padStart(2,'0')}:00</div>`;
+            }
+
+            if (!date || !car) { container.innerHTML = html; return; }
+
+            const dayBookings = Peminjamans.filter(b => b.date === date && b.car === car);
+
+            dayBookings.forEach(b => {
+                let sParts = b.start.split(':'), eParts = b.end.split(':');
+                let sMin = (parseInt(sParts[0]) * 60) + parseInt(sParts[1]);
+                let eMin = (parseInt(eParts[0]) * 60) + parseInt(eParts[1]);
+                if (eMin === 0) eMin = 1440; // Handler tutup jam 24:00
+
+                let left = (sMin / 1440) * 100;
+                let width = ((eMin - sMin) / 1440) * 100;
+
+                let labelText = (width > 12) ? `${b.name.split(' ')[0]}<br><span class="text-[8px] md:text-[10px] opacity-90">${b.start}-${b.end}</span>` : ``;
+
+                html += `
+                    <div class="absolute top-0 bottom-0 bg-red-600 border-x border-red-800 flex flex-col justify-center items-center text-white text-[10px] md:text-xs overflow-hidden cursor-help hover:bg-red-700 transition shadow-lg z-10" 
+                         style="left: ${left}%; width: ${width}%;" 
+                         title="Nama: ${b.name}\nTujuan: ${b.tujuan}\nJam: ${b.start} - ${b.end}">
+                        <span class="px-1 text-center font-bold leading-tight truncate w-full">${labelText}</span>
                     </div>
-                    <div class="relative w-full h-10 bg-green-100 border border-green-300 rounded overflow-hidden shadow-inner flex items-center">
-                        <div class="absolute inset-0 flex items-center justify-center text-green-700 font-bold text-xs opacity-50 uppercase tracking-widest">Tersedia</div>
                 `;
-                
-                dayPeminjamans.forEach(b => {
-                    if(b.type === 'block') {
-                        trackHtml += `<div class="absolute top-0 bottom-0 bg-gray-700 border-l border-gray-800 flex items-center justify-center text-[10px] text-white font-bold px-1 cursor-not-allowed z-10" style="left: 0%; width: 100%;" title="DIBLOKIR ADMIN">DIBLOKIR</div>`;
-                    } else {
-                        const startMins = timeToMins(b.start);
-                        const endMins = timeToMins(b.end);
-                        const left = (startMins / 1440) * 100;
-                        let width = ((endMins - startMins) / 1440) * 100;
-                        if(width <= 0) width = 1; 
-                        
-                        trackHtml += `
-                        <div class="absolute top-0 bottom-0 bg-red-500 border-l border-r border-white flex flex-col justify-center items-center text-[10px] leading-tight text-white font-semibold overflow-hidden hover:bg-red-600 cursor-help transition-all shadow-md z-10" style="left: ${left}%; width: ${width}%;" title="Dipakai: ${b.name} (${b.start} - ${b.end})">
-                            <span class="truncate w-full text-center px-1">${b.name.split(' ')[0]}</span>
-                            <span class="hidden md:block scale-[0.8]">${b.start}-${b.end}</span>
-                        </div>`;
-                    }
-                });
-
-                trackHtml += `
-                    </div>
-                    <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1 font-medium">
-                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
-                    </div>
-                </div>`;
-                
-                container.innerHTML += trackHtml;
             });
-        }
+            container.innerHTML = html;
+        };
 
-        // ---------------- FUNGSI PENGECEKAN BENTROK REALTIME ----------------
+        // CEK KETERSEDIAAN + REAL-TIME POPUP ALERT
         function checkAvailability() {
             const startDateStr = document.getElementById('startDate').value;
             const endDateStr = document.getElementById('endDate').value || startDateStr; 
@@ -467,84 +411,76 @@
             const carSelect = document.getElementById('carSelect');
 
             if (!startDateStr) return;
-            
-            // 1. Gambar Ulang Visualisasi Tiap Ganti Tanggal
-            renderTimeline(startDateStr);
 
-            const dateArray = getDateArray(startDateStr, endDateStr);
-            let currentCar = carSelect.value;
-            let conflictBooking = null;
+            // Update Tanggal & Mobil di Timeline agar Auto-Sync dengan Form yang diisi user
+            document.getElementById('timelineDate').value = startDateStr;
+            document.getElementById('timelineCar').value = carSelect.value;
+            renderTimeline();
 
-            // 2. Cek apakah Input Jam yang dipilih Murni Bentrok
-            if (start && end && start < end) { 
-                for (const date of dateArray) {
-                    conflictBooking = Peminjamans.find(b => {
-                        if (b.date !== date || b.car !== currentCar) return false; 
-                        if (tempEditingData && b.id == tempEditingData.id) return false; 
-                        return (start < b.end && end > b.start);
-                    });
-                    if (conflictBooking) break; 
-                }
+            const dateArray = [];
+            let loopDate = new Date(startDateStr), endD = new Date(endDateStr);
+            if (endD < loopDate) endD = loopDate;
+            while (loopDate <= endD) {
+                dateArray.push(`${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, '0')}-${String(loopDate.getDate()).padStart(2, '0')}`);
+                loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            const submitBtn = document.getElementById('submitBtnMain');
-            
-            // 3. Tampilkan Peringatan atau Normalkan Tombol
-            if (conflictBooking && !isAdmin) {
-                if (conflictBooking.type === 'block') {
-                    showConflictToast(`Maaf, mobil ini sedang Maintenance / diblokir Admin pada tanggal tersebut.`);
-                } else {
-                    showConflictToast(`Gagal! Mobil ini sudah dipinjam oleh ${conflictBooking.name} pada pukul ${conflictBooking.start} - ${conflictBooking.end}. \n\nSilakan pilih jam atau mobil yang lain.`);
-                }
-                // Matikan Tombol
-                submitBtn.disabled = true;
-                submitBtn.classList.replace('bg-blue-700', 'bg-red-600');
-                submitBtn.classList.replace('hover:bg-blue-800', 'hover:bg-red-700');
-                submitBtn.classList.add('cursor-not-allowed', 'opacity-90');
-                submitBtn.innerHTML = "<i class='fas fa-ban'></i> Jadwal Bentrok";
-            } else {
-                hideConflictToast();
-                submitBtn.disabled = false;
-                submitBtn.classList.replace('bg-red-600', 'bg-blue-700');
-                submitBtn.classList.replace('hover:bg-red-700', 'hover:bg-blue-800');
-                submitBtn.classList.remove('cursor-not-allowed', 'opacity-90');
-                if(tempEditingData) {
-                    submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
-                    submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
-                } else {
-                    submitBtn.innerHTML = "Konfirmasi Peminjaman";
-                }
-            }
+            let conflictForSelectedCar = false; // Penanda jika bentrok di form saat ini
 
-            // 4. Ubah Teks Dropdown Mobil sbg Penanda
             for(let i = 0; i < carSelect.options.length; i++) {
                 const carVal = carSelect.options[i].value;
                 if(!originalCarTexts[carVal]) continue;
 
-                const isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
-                
+                let isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
                 let isTimeConflict = false;
-                if(start && end && start < end) {
+
+                if (start && end) {
                     isTimeConflict = Peminjamans.some(b => {
-                        if (!dateArray.includes(b.date)) return false; 
-                        if (b.car !== carVal) return false; 
-                        if (b.type === 'block') return false; 
+                        if (!dateArray.includes(b.date) || b.car !== carVal || b.type === 'block') return false; 
                         if (tempEditingData && b.id == tempEditingData.id) return false; 
                         return (start < b.end && end > b.start);
                     });
                 }
 
-                if(isBlocked) {
-                    carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
-                } else if (isTimeConflict) {
-                    carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIPAKAI";
-                } else {
-                    carSelect.options[i].text = originalCarTexts[carVal];
+                // Trigger Alert real-time hanya pada mobil yang SEDANG AKTIF dipilih
+                if (carVal === carSelect.value && (isTimeConflict || isBlocked)) {
+                    conflictForSelectedCar = true;
                 }
+
+                if(isBlocked) {
+                    carSelect.options[i].disabled = true; carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
+                } else if (isTimeConflict) {
+                    carSelect.options[i].disabled = true; carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIPAKAI";
+                } else {
+                    carSelect.options[i].disabled = false; carSelect.options[i].text = originalCarTexts[carVal];
+                }
+            }
+
+            // MUNCULKAN POPUP & BERSIHKAN FORM JIKA BENTROK
+            if (conflictForSelectedCar) {
+                if (!lastAlertedConflict) {
+                    alert("⚠️ JADWAL BENTROK!\n\nJam atau tanggal yang Anda pilih pada mobil ini sudah dipesan oleh orang lain.\n\nSilakan cek balok merah pada Visualisasi Ketersediaan di bawah, lalu ubah Jam Mulai / Jam Selesai Anda.");
+                    lastAlertedConflict = true;
+                    
+                    document.getElementById('endTime').value = ""; // Paksa user ngisi ulang
+                    document.getElementById('timeConflictError').classList.remove('hidden'); // Tampilkan pesan merah inline
+                }
+            } else {
+                lastAlertedConflict = false; // Reset jika sudah aman
+                document.getElementById('timeConflictError').classList.add('hidden'); // Sembunyikan pesan merah
+            }
+
+            // Jika mobil current ter-disable, geser otomatis ke yg kosong (jika ada)
+            if(carSelect.options[carSelect.selectedIndex] && carSelect.options[carSelect.selectedIndex].disabled && !conflictForSelectedCar) {
+                let availableOption = Array.from(carSelect.options).find(opt => !opt.disabled);
+                if (availableOption) {
+                    carSelect.value = availableOption.value;
+                    document.getElementById('timelineCar').value = availableOption.value;
+                    renderTimeline();
+                } else { carSelect.value = ""; }
             }
         }
 
-        // ---------------- ALUR LAINNYA ----------------
         function populateDropdown(elementId, dataArray, defaultText) {
             const select = document.getElementById(elementId);
             if(!select) return;
@@ -679,50 +615,64 @@
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
-            // Penanganan Submit Edit
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
-
-                const editPayload = {
-                    action: 'edit', id: tempEditingData.id, otp: tempEditingData.otp,
-                    name, divisi, wa: empWa, email, car, tujuan, date: startDateStr, start, end, type: 'Peminjaman'
-                };
-
+                const editPayload = { action: 'edit', id: tempEditingData.id, otp: tempEditingData.otp, name, divisi, wa: empWa, email, car, tujuan, date: startDateStr, start, end, type: 'Peminjaman' };
                 try {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(editPayload) });
                     const response = await res.json();
                     if(response.status === 'success') {
-                        alert("Perubahan berhasil disimpan!");
-                        fetchPeminjamans(); 
-                        resetFormState();
+                        alert("Perubahan berhasil disimpan!"); fetchPeminjamans(); resetFormState();
                     } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 } catch(e) { alert("Error koneksi."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 return;
             }
 
-            const dateArray = getDateArray(startDateStr, endDateStr);
+            const startDate = new Date(startDateStr), endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const dateArray = [];
+            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
 
-            // Double check sebagai lapisan keamanan terakhir
-            let hasConflict = false;
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                dateArray.push(`${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, '0')}-${String(loopDate.getDate()).padStart(2, '0')}`);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            // SINKRONISASI REAL-TIME
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Mengecek Sinkronisasi Jadwal...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const textData = await response.text();
+                const parsedData = JSON.parse(textData);
+                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
+                Peminjamans = rawPeminjamans.map(b => {
+                    let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
+                    return { ...b, tujuan: keyTujuan ? b[keyTujuan] : "-", date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
+                });
+                updateCalendar(); renderPeminjamanList(); renderTimeline();
+            } catch (error) {}
+
+            let hasConflict = false, conflictDates = [];
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => {
                     if (b.date !== date || b.car !== car) return false;
                     if (tempEditingData && b.id == tempEditingData.id) return false;
                     return (start < b.end && end > b.start);
                 });
-                if (conflict && !isAdmin) hasConflict = true; 
+                if (conflict && !isAdmin) { hasConflict = true; conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); }
             }
 
             if (hasConflict) { 
-                checkAvailability(); // Picu ulang visual peringatan
-                return; 
+                alert(`GAGAL! JADWAL BENTROK:\n\nMobil ini ternyata baru saja dipesan pada waktu:\n${conflictDates.join('\n')}\n\nSilakan pilih jam lain atau mobil lain.`); 
+                btn.innerHTML = originalBtnText; btn.disabled = false; checkAvailability(); return; 
             }
 
-            // Lanjut ke persetujuan
+            btn.innerHTML = originalBtnText; btn.disabled = false;
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan };
-            if(isAdmin && isBlock) { executePeminjaman(); } 
-            else { document.getElementById('agreementModal').style.display = 'flex'; }
+            if(isAdmin && isBlock) { executePeminjaman(); } else { document.getElementById('agreementModal').style.display = 'flex'; }
         }
 
         async function executePeminjaman() {
@@ -730,24 +680,17 @@
             document.getElementById('agreementModal').style.display = 'none';
 
             const { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan } = tempBookingData;
-
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
-            btn.disabled = true;
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses..."; btn.disabled = true;
 
             const newPeminjamans = dateArray.map((date, index) => ({
                 id: Date.now().toString() + index, 
-                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
-                divisi: isAdmin && isBlock ? "-" : divisi,
-                wa: isAdmin && isBlock ? "-" : empWa,
-                email: isAdmin && isBlock ? "-" : email,
-                car: car, 
-                tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
-                date: date, start: start, end: end,
-                type: isAdmin && isBlock ? 'block' : 'Peminjaman'
+                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name, divisi: isAdmin && isBlock ? "-" : divisi,
+                wa: isAdmin && isBlock ? "-" : empWa, email: isAdmin && isBlock ? "-" : email, car: car, 
+                tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan, date: date, start: start, end: end, type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
             Peminjamans.push(...newPeminjamans);
-            updateCalendar(); renderPeminjamanList(); checkAvailability(); 
+            updateCalendar(); renderPeminjamanList(); checkAvailability(); renderTimeline();
             
             try {
                 await Promise.all(newPeminjamans.map(b => fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...b }) })));
@@ -755,35 +698,26 @@
             } catch(e) {}
 
             alert(isAdmin && isBlock ? `Berhasil diblokir!` : "Peminjaman Berhasil Dicatat! Notifikasi dikirim ke Email.");
-            resetFormState();
-            tempBookingData = null;
+            resetFormState(); tempBookingData = null;
         }
 
+        // ================= ALUR OTP EDIT & DELETE OTOMATIS =================
         function initAction(id, type) {
-            actionId = id; actionType = type;
-            window.closeModal(); 
-            
+            actionId = id; actionType = type; window.closeModal(); 
             if (isAdmin) {
-                if (type === 'delete') { if(confirm("Hapus pesanan ini (Admin)?")) deleteDirect(id, "admin"); } 
-                else { executeEditSetup(id, "admin"); }
+                if (type === 'delete') { if(confirm("Hapus pesanan ini (Admin)?")) deleteDirect(id, "admin"); } else { executeEditSetup(id, "admin"); }
                 return;
             }
-
             document.getElementById('otpModal').style.display = 'flex';
-            document.getElementById('otpStep1').style.display = 'block';
-            document.getElementById('otpStep2').style.display = 'none';
+            document.getElementById('otpStep1').style.display = 'block'; document.getElementById('otpStep2').style.display = 'none';
 
-            fetch(SCRIPT_URL, {
-                method: 'POST', body: JSON.stringify({ action: 'requestOTP', id: id })
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'requestOTP', id: id })
             }).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
-                    document.getElementById('otpStep1').style.display = 'none';
-                    document.getElementById('otpStep2').style.display = 'block';
+                    document.getElementById('otpStep1').style.display = 'none'; document.getElementById('otpStep2').style.display = 'block';
                     document.getElementById('otpText').innerHTML = `Masukkan 6 Digit OTP yang telah dikirim ke email <b>${res.email}</b>.`;
                     document.getElementById('verifyOtpInput').value = "";
-                } else {
-                    closeOtpModal(); alert(res.message || "Gagal memuat OTP.");
-                }
+                } else { closeOtpModal(); alert(res.message || "Gagal memuat OTP."); }
             }).catch(e => { closeOtpModal(); alert("Error koneksi database."); });
         }
 
@@ -792,9 +726,7 @@
         async function submitOtpAction() {
             const otp = document.getElementById('verifyOtpInput').value.trim();
             if(!otp) return alert("OTP wajib diisi!");
-            
-            const btn = document.getElementById('otpConfirmBtn');
-            const originalText = btn.innerText;
+            const btn = document.getElementById('otpConfirmBtn'); const originalText = btn.innerText;
             btn.innerText = "Memproses..."; btn.disabled = true;
 
             try {
@@ -802,16 +734,14 @@
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: actionId, otp: otp }) });
                     const response = await res.json();
                     if(response.status === "success") {
-                        alert("Pesanan berhasil dihapus!");
-                        Peminjamans = Peminjamans.filter(b => b.id != actionId);
-                        updateCalendar(); renderPeminjamanList(); checkAvailability(); closeOtpModal();
+                        alert("Pesanan berhasil dihapus!"); Peminjamans = Peminjamans.filter(b => b.id != actionId);
+                        updateCalendar(); renderPeminjamanList(); closeOtpModal(); renderTimeline();
                     } else { alert(response.message || "OTP Salah!"); }
                 } else if (actionType === 'edit') {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
                     const response = await res.json();
-                    if(response.status === "success") {
-                        closeOtpModal(); executeEditSetup(actionId, otp);
-                    } else { alert(response.message || "OTP Salah!"); }
+                    if(response.status === "success") { closeOtpModal(); executeEditSetup(actionId, otp); } 
+                    else { alert(response.message || "OTP Salah!"); }
                 }
             } catch(e) { alert("Error koneksi."); }
             btn.innerText = originalText; btn.disabled = false;
@@ -819,66 +749,50 @@
 
         async function deleteDirect(id, otp) {
             Peminjamans = Peminjamans.filter(b => b.id != id);
-            updateCalendar(); renderPeminjamanList(); checkAvailability();
+            updateCalendar(); renderPeminjamanList(); renderTimeline();
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id, otp: otp }) });
         }
 
         function executeEditSetup(id, otp) {
             const b = Peminjamans.find(x => x.id == id);
             if(!b) return;
-            
-            document.getElementById('empDivisi').value = b.divisi;
-            filterKaryawanByDivisi();
+            document.getElementById('empDivisi').value = b.divisi; filterKaryawanByDivisi();
             setTimeout(() => { document.getElementById('empName').value = b.name; }, 300);
-            document.getElementById('empWa').value = b.wa;
-            document.getElementById('empEmail').value = b.email || "";
-            document.getElementById('carSelect').value = b.car;
-            document.getElementById('tujuanPinjam').value = b.tujuan;
-            document.getElementById('startDate').value = b.date;
-            document.getElementById('startTime').value = b.start;
-            document.getElementById('endTime').value = b.end;
-
-            document.getElementById('endDate').value = "";
-            document.getElementById('endDate').disabled = true;
-            document.getElementById('endDate').classList.add('bg-gray-200');
-            document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan saat Edit)</span>`;
+            document.getElementById('empWa').value = b.wa; document.getElementById('empEmail').value = b.email || "";
+            document.getElementById('carSelect').value = b.car; document.getElementById('tujuanPinjam').value = b.tujuan;
+            document.getElementById('startDate').value = b.date; document.getElementById('startTime').value = b.start; document.getElementById('endTime').value = b.end;
+            
+            document.getElementById('endDate').value = ""; document.getElementById('endDate').disabled = true;
+            document.getElementById('endDate').classList.add('bg-gray-200'); document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan)</span>`;
 
             tempEditingData = { id: id, otp: otp };
-            checkAvailability(); // Update visual agar blok sendiri diabaikan
-            
+            const submitBtn = document.getElementById('submitBtnMain'); submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
+            submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         }
 
         function resetFormState() {
             document.getElementById('PeminjamanForm').reset();
-            document.getElementById('endDate').disabled = false;
-            document.getElementById('endDate').classList.remove('bg-gray-200');
+            document.getElementById('endDate').disabled = false; document.getElementById('endDate').classList.remove('bg-gray-200');
             document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span>`;
-            document.getElementById('startDate').value = formatDisplayDate(today);
-            
-            tempEditingData = null;
-            filterKaryawanByDivisi();
-            checkAvailability(); // Pulihkan tombol & visual
-            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('timeConflictError').classList.add('hidden'); lastAlertedConflict = false;
+            tempEditingData = null; filterKaryawanByDivisi();
+            const submitBtn = document.getElementById('submitBtnMain'); submitBtn.innerHTML = "Konfirmasi Peminjaman";
+            submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            submitBtn.disabled = false; document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
         function renderPeminjamanList() {
-            const list = document.getElementById('PeminjamanList');
-            const search = document.getElementById('searchBook').value.toLowerCase();
-            const countSpan = document.getElementById('totalPeminjamans');
-            list.innerHTML = "";
-            
+            const list = document.getElementById('PeminjamanList'), search = document.getElementById('searchBook').value.toLowerCase();
+            const countSpan = document.getElementById('totalPeminjamans'); list.innerHTML = "";
             let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
-            countSpan.innerText = filtered.length;
-            filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
-
+            countSpan.innerText = filtered.length; filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
             if (filtered.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return; }
 
             filtered.forEach(b => {
-                const isBlock = b.type === 'block';
-                const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
+                const isBlock = b.type === 'block', cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
-
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
@@ -889,8 +803,7 @@
                             ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                         </div>
                         <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex gap-4">
-                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
-                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
+                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span><span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
                         </div>
                         <div class="flex justify-end gap-3 mt-3 pt-3 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-90">
                             <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2 py-1 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
@@ -905,19 +818,14 @@
             if (!isAdmin) {
                 const pass = prompt("Masukkan Password Admin:");
                 if (pass === "admin123") {
-                    isAdmin = true;
-                    document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
-                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600');
-                    document.getElementById('adminControls').classList.remove('hidden');
+                    isAdmin = true; document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
+                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600'); document.getElementById('adminControls').classList.remove('hidden');
                     alert("Login Admin Berhasil!");
                 } else { alert("Password Salah!"); }
             } else {
-                isAdmin = false;
-                document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
-                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
-                document.getElementById('adminControls').classList.add('hidden');
-                document.getElementById('isBlock').checked = false;
-                document.getElementById('isBlock').dispatchEvent(new Event('change'));
+                isAdmin = false; document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
+                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600'); document.getElementById('adminControls').classList.add('hidden');
+                document.getElementById('isBlock').checked = false; document.getElementById('isBlock').dispatchEvent(new Event('change'));
             }
             renderPeminjamanList();
         }
