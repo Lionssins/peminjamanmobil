@@ -703,7 +703,7 @@
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
-            // ===== PENANGANAN SUBMIT EDIT =====
+            // ===== FIX: PENANGANAN SUBMIT EDIT MURNI =====
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
@@ -722,7 +722,8 @@
                         resetFormState();
                     } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 } catch(e) { alert("Error koneksi."); btn.innerHTML = originalBtnText; btn.disabled = false; }
-                return;
+                
+                return; // PASTI RETURN DI SINI AGAR TIDAK MUNCUL MODAL AGREEMENT LAGI
             }
 
             const startDate = new Date(startDateStr);
@@ -760,7 +761,6 @@
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => {
                     if (b.date !== date || b.car !== car) return false;
-                    if (tempEditingData && b.id == tempEditingData.id) return false;
                     return (start < b.end && end > b.start);
                 });
                 if (conflict && !isAdmin) { hasConflict = true; }
@@ -894,7 +894,10 @@
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
                     const response = await res.json();
                     if(response.status === "success") {
-                        closeOtpModal(); executeEditSetup(actionId, otp);
+                        // FIX: SIMPAN ID SEMENTARA AGAR TIDAK HILANG SAAT MODAL DITUTUP
+                        const tempIdToEdit = actionId; 
+                        closeOtpModal(); 
+                        executeEditSetup(tempIdToEdit, otp);
                     } else { alert(response.message || "OTP Salah!"); }
                 }
             } catch(e) { alert("Error koneksi."); }
