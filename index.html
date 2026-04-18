@@ -17,7 +17,7 @@
 <body class="bg-gray-100 font-sans text-gray-800">
 
     <nav class="bg-blue-800 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
+        <div class="container mx-auto flex justify-between items-center max-w-6xl">
             <div class="flex items-center gap-2">
                 <img class="h-10 md:h-12 w-auto object-contain bg-white p-1 rounded" src="./logo.png" alt="Logo DBL" onerror="this.style.display='none'">
                 <h1 class="text-xl font-bold tracking-wide">PEMINJAMAN MOBIL</h1>
@@ -28,15 +28,17 @@
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-        <div class="lg:col-span-2 space-y-6">
+    <div class="container mx-auto p-4 max-w-6xl mt-4">
+        <div class="space-y-8">
             
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h2 class="text-2xl font-bold text-gray-700">Jadwal Ketersediaan</h2>
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-md border-t-4 border-blue-600">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-700 flex items-center gap-2">
+                        <i class="far fa-calendar-alt text-blue-600"></i> Kalender Ketersediaan
+                    </h2>
                     <div class="flex gap-2">
-                        <select id="yearSelect" class="border rounded p-2 bg-gray-50" onchange="updateCalendar()"></select>
-                        <select id="monthSelect" class="border rounded p-2 bg-gray-50" onchange="updateCalendar()">
+                        <select id="yearSelect" class="border-2 rounded-lg p-2 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500" onchange="updateCalendar()"></select>
+                        <select id="monthSelect" class="border-2 rounded-lg p-2 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500" onchange="updateCalendar()">
                             <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
                             <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
                             <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
@@ -45,164 +47,131 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-7 gap-1 text-center mb-2 font-semibold text-gray-500">
-                    <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+                <div class="grid grid-cols-7 gap-2 text-center mb-2 font-bold text-gray-500 bg-gray-50 p-2 rounded-lg">
+                    <div class="text-red-500">Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div class="text-blue-500">Sab</div>
                 </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center text-sm"></div>
                 
-                <div class="mt-4 flex gap-4 text-xs justify-center">
-                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-100 border border-green-500 rounded"></div> Tersedia</span>
-                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-100 border border-yellow-500 rounded"></div> Sebagian Dipinjam</span>
-                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-100 border border-red-500 rounded"></div> Penuh</span>
+                <div class="mt-6 flex flex-wrap gap-4 text-sm justify-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <span class="flex items-center gap-2 font-semibold text-gray-600"><div class="w-4 h-4 bg-green-100 border border-green-500 rounded"></div> Tersedia</span>
+                    <span class="flex items-center gap-2 font-semibold text-gray-600"><div class="w-4 h-4 bg-yellow-100 border border-yellow-500 rounded"></div> Sebagian Dipinjam</span>
+                    <span class="flex items-center gap-2 font-semibold text-gray-600"><div class="w-4 h-4 bg-red-100 border border-red-500 rounded"></div> Penuh</span>
                 </div>
+                <p class="text-center text-xs text-gray-400 mt-2">*Klik pada tanggal untuk melihat detail peminjam atau mengedit pesanan.</p>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-600">
-                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <i class="far fa-calendar-plus text-blue-600"></i> Form Peminjaman
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-md border-l-4 border-blue-600">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+                    <i class="far fa-edit text-blue-600"></i> Form Peminjaman Mobil
                 </h3>
                 
-                <form id="PeminjamanForm" onsubmit="handlePeminjaman(event)" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form id="PeminjamanForm" onsubmit="handlePeminjaman(event)" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
-                            <select id="empDivisi" required onchange="filterKaryawanByDivisi()" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white req-field">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Divisi</label>
+                            <select id="empDivisi" required onchange="filterKaryawanByDivisi()" class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none bg-white req-field">
                                 <option value="" disabled selected>-- Memuat Data... --</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
-                            <select id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white req-field">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Peminjam</label>
+                            <select id="empName" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none bg-white req-field">
                                 <option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                            <input type="tel" id="empWa" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Isi Dengan Sebenarnya">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                            <input type="tel" id="empWa" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none req-field" placeholder="Isi Dengan Sebenarnya">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Pemesan <span class="text-red-500">*</span></label>
-                            <input type="email" id="empEmail" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Email Notifikasi & OTP">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Email Pemesan <span class="text-red-500">*</span></label>
+                            <input type="email" id="empEmail" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none req-field" placeholder="Email Notifikasi & OTP">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
-                            <select id="carSelect" required class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none" onchange="checkAvailability()">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Mobil</label>
+                            <select id="carSelect" required class="w-full border-2 rounded-lg p-2.5 bg-white focus:border-blue-500 outline-none" onchange="checkAvailability()">
                                 <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
                                 <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
                                 <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tujuan Peminjaman</label>
-                            <input type="text" id="tujuanPinjam" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Visit Sponsor">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tujuan Peminjaman</label>
+                            <input type="text" id="tujuanPinjam" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none req-field" placeholder="Contoh: Visit Sponsor / Bertemu Klien">
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                            <input type="date" id="startDate" required class="w-full border rounded-lg p-2" onchange="checkAvailability()">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
+                            <input type="date" id="startDate" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none" onchange="checkAvailability()">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1" id="lblEndDate">Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span></label>
-                            <input type="date" id="endDate" class="w-full border rounded-lg p-2" onchange="checkAvailability()">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1" id="lblEndDate">Tanggal Akhir <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
+                            <input type="date" id="endDate" class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none" onchange="checkAvailability()">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Jam Mulai</label>
-                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2 req-field" onchange="checkAvailability()">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jam Mulai</label>
+                            <input type="time" id="startTime" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none req-field" onchange="checkAvailability()">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Jam Selesai</label>
-                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2 req-field" onchange="checkAvailability()">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jam Selesai</label>
+                            <input type="time" id="endTime" required class="w-full border-2 rounded-lg p-2.5 focus:border-blue-500 outline-none req-field" onchange="checkAvailability()">
                         </div>
                     </div>
 
-                    <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                        <label class="flex items-center gap-2 font-bold cursor-pointer">
-                            <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Mobil Spesifik (Admin)
+                    <div id="adminControls" class="hidden p-4 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700">
+                        <label class="flex items-center gap-2 font-bold cursor-pointer text-lg">
+                            <input type="checkbox" id="isBlock" class="w-5 h-5 text-red-600"> MODE BLOKIR MOBIL (ADMIN)
                         </label>
-                        <p class="text-xs text-red-500 mt-1">*Akan memblokir mobil yang dipilih pada dropdown di atas dari peminjam (00:00 - 23:59).</p>
+                        <p class="text-sm text-red-500 mt-2">*Mencentang ini akan memblokir mobil yang dipilih pada dropdown di atas dari peminjam (Full Day 00:00 - 23:59).</p>
                     </div>
 
-                    <button type="submit" id="submitBtnMain" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
+                    <button type="submit" id="submitBtnMain" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg shadow-lg transition transform active:scale-95 text-lg">
                         Konfirmasi Peminjaman
                     </button>
-                    <button type="button" id="cancelEditBtn" onclick="resetFormState()" class="hidden w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg shadow transition mt-2">
+                    <button type="button" id="cancelEditBtn" onclick="resetFormState()" class="hidden w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3.5 rounded-lg shadow transition mt-2 text-lg">
                         Batal Edit
                     </button>
                 </form>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-indigo-600">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-5 gap-3">
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-md border-t-4 border-indigo-600">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">
                     <h3 class="text-xl font-bold flex items-center gap-2 text-indigo-800">
                         <i class="fas fa-chart-gantt"></i> Visualisasi Jam Mobil
                     </h3>
-                    <div class="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
-                        <label class="text-sm font-semibold text-indigo-700">Pilih Tanggal:</label>
+                    <div class="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200">
+                        <label class="text-sm font-bold text-indigo-800">Pilih Tanggal:</label>
                         <input type="date" id="timelineDate" class="border-none bg-transparent outline-none font-bold text-indigo-900 cursor-pointer" onchange="renderTimeline()">
                     </div>
                 </div>
                 
-                <div id="timelineContainer" class="space-y-5">
+                <div id="timelineContainer" class="space-y-6">
                     </div>
                 
-                <div class="flex gap-4 text-xs mt-6 justify-center bg-gray-50 py-2 rounded-lg border border-gray-200">
-                    <span class="flex items-center gap-1 font-semibold text-green-700"><div class="w-3 h-3 bg-green-500 rounded-sm"></div> Kosong / Tersedia</span>
-                    <span class="flex items-center gap-1 font-semibold text-red-700"><div class="w-3 h-3 bg-red-500 rounded-sm"></div> Sedang Dipakai</span>
-                    <span class="flex items-center gap-1 font-semibold text-gray-800"><div class="w-3 h-3 bg-gray-800 rounded-sm"></div> Diblokir Admin</span>
+                <div class="flex flex-wrap gap-6 text-sm mt-8 justify-center bg-gray-50 py-3 rounded-lg border border-gray-200">
+                    <span class="flex items-center gap-2 font-bold text-green-700"><div class="w-4 h-4 bg-green-500 rounded-sm"></div> Kosong / Tersedia</span>
+                    <span class="flex items-center gap-2 font-bold text-red-700"><div class="w-4 h-4 bg-red-500 rounded-sm shadow-md"></div> Sedang Dipakai</span>
+                    <span class="flex items-center gap-2 font-bold text-gray-800"><div class="w-4 h-4 bg-gray-800 rounded-sm shadow-md"></div> Diblokir Admin</span>
                 </div>
             </div>
 
-            <div class="bg-yellow-50 p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-                <h3 class="text-lg font-bold text-yellow-800 mb-2 flex items-center gap-2">
+            <div class="bg-yellow-50 p-6 md:p-8 rounded-xl shadow-md border-l-4 border-yellow-500">
+                <h3 class="text-xl font-bold text-yellow-800 mb-3 flex items-center gap-2">
                     <i class="fas fa-sticky-note"></i> Catatan Peminjaman
                 </h3>
-                <div class="text-sm text-gray-700 space-y-2 leading-relaxed">
+                <div class="text-base text-gray-700 space-y-3 leading-relaxed">
                     <p>1. Harap selalu menjaga kebersihan mobil selama dan setelah pemakaian.</p>
                     <p>2. Kembalikan kunci kepada <b>PIC (Lita)</b> maksimal 15 menit setelah waktu peminjaman berakhir.</p>
                     <p>3. Jika mendadak batal berangkat, mohon segera hapus pesanan agar mobil dapat digunakan oleh divisi lain.</p>
                     <p>4. Segala bentuk denda tilang eletronik (ETLE) menjadi tanggung jawab penuh peminjam.</p>
-                    </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-teal-500">
-                <h3 class="text-lg font-bold text-teal-800 mb-1 flex items-center gap-2">
-                    <i class="fas fa-comment-dots"></i> Kotak Masukan & Saran
-                </h3>
-                <p class="text-xs text-gray-500 mb-4">Punya ide fitur baru, usulan perbaikan, atau laporan kendala? Kirimkan pesan langsung ke Admin/Developer.</p>
-                <form id="feedbackForm" onsubmit="submitFeedback(event)" class="space-y-3">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="text" id="fbName" placeholder="Nama Anda (Opsional)" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50">
-                        <input type="email" id="fbEmail" placeholder="Email Anda (Opsional untuk balasan)" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50">
-                    </div>
-                    <textarea id="fbMessage" required placeholder="Tulis masukan, ide, atau laporan bug Anda di sini..." rows="3" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50"></textarea>
-                    <div class="flex justify-end">
-                        <button type="submit" id="btnFeedback" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm text-sm transition flex items-center gap-2">
-                            <i class="fas fa-paper-plane"></i> Kirim Masukan
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-        </div>
-
-        <div class="lg:col-span-1">
-            <div class="bg-white p-4 rounded-xl shadow-md sticky top-24 h-[85vh] flex flex-col">
-                <h3 class="text-lg font-bold border-b pb-2 mb-2 flex justify-between items-center">
-                    <span><i class="fas fa-list-ul text-blue-500 mr-2"></i>Daftar Peminjaman</span>
-                    <span class="text-xs bg-gray-200 px-2 py-1 rounded-full" id="totalPeminjamans">0</span>
-                </h3>
-                <div class="mb-2">
-                    <input type="text" id="searchBook" onkeyup="renderPeminjamanList()" placeholder="Cari nama..." class="w-full text-sm p-2 border rounded">
-                </div>
-                <div id="PeminjamanList" class="flex-1 overflow-y-auto space-y-3 pr-2">
-                    <div class="text-center text-gray-400 mt-10">Belum ada Peminjaman</div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -212,7 +181,7 @@
                 <h3 class="font-bold text-lg" id="modalTitle">Detail Peminjaman</h3>
                 <button onclick="window.closeModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
             </div>
-            <div id="modalContent" class="p-5 overflow-y-auto flex-1 space-y-3 bg-gray-50"></div>
+            <div id="modalContent" class="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50"></div>
             <div class="p-4 border-t bg-white flex justify-end gap-2 rounded-b-xl">
                 <button onclick="window.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow-sm">Tutup</button>
                 <button onclick="window.goToPeminjamanForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
@@ -228,9 +197,9 @@
                 <h3 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-file-signature"></i> Syarat & Ketentuan Peminjaman</h3>
                 <button onclick="window.closeAgreementModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50 text-sm md:text-base text-gray-800" id="printArea">
-                <p class="font-bold mb-3 text-red-600">Saya selaku peminjam menyetujui untuk :</p>
-                <ol class="list-decimal pl-5 space-y-3 text-justify">
+            <div class="p-6 md:p-8 overflow-y-auto flex-1 bg-gray-50 text-sm md:text-base text-gray-800" id="printArea">
+                <p class="font-bold mb-4 text-red-600 text-lg">Saya selaku peminjam menyetujui untuk :</p>
+                <ol class="list-decimal pl-6 space-y-4 text-justify">
                     <li>Bertanggung jawab sepenuhnya terhadap kehilangan dan kerusakan kendaraan selama pemakaian.</li>
                     <li>Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat, dan menjaga kebersihan.</li>
                     <li>Tidak mengemudikan kendaraan diatas batas maksimum kecepatan dan mentaati peraturan lalu lintas.</li>
@@ -261,12 +230,12 @@
             
             <div id="otpStep1" class="text-center py-8">
                 <i class="fas fa-spinner fa-spin text-blue-600 text-4xl mb-3"></i>
-                <p class="text-sm text-gray-600 font-medium" id="otpTextLoading">Mencari Data & Mengirim OTP...</p>
+                <p class="text-sm text-gray-600 font-medium mt-3" id="otpTextLoading">Mencari Data & Mengirim OTP...</p>
             </div>
             
             <div id="otpStep2" class="hidden py-4">
                 <p class="text-sm text-gray-700 mb-4 text-center bg-blue-50 p-3 rounded" id="otpText"></p>
-                <input type="text" id="verifyOtpInput" class="w-full border rounded-lg p-3 mb-4 tracking-[0.5em] text-center text-xl font-bold bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="• • • • • •" maxlength="6">
+                <input type="text" id="verifyOtpInput" class="w-full border-2 border-gray-300 rounded-lg p-3 mb-4 tracking-[0.5em] text-center text-2xl font-bold bg-gray-50 focus:border-blue-500 outline-none" placeholder="• • • • • •" maxlength="6">
                 <div class="flex justify-end gap-2 mt-4">
                     <button onclick="closeOtpModal()" class="bg-gray-200 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Batal</button>
                     <button onclick="submitOtpAction()" class="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition font-semibold shadow" id="otpConfirmBtn">Konfirmasi</button>
@@ -307,7 +276,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
             document.getElementById('monthSelect').value = currentMonth;
-            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-6 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin text-2xl mb-2'></i><br>Menghubungkan ke Database...</div>";
             
             // Set default date for timeline to today
             document.getElementById('timelineDate').value = formatDisplayDate(new Date());
@@ -395,7 +364,6 @@
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
                 
                 updateCalendar(); 
-                renderPeminjamanList(); 
                 renderTimeline(); 
             } catch (error) {
                 document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
@@ -419,15 +387,15 @@
                 let isBlocked = bookingsForCar.some(b => b.type === 'block');
 
                 let rowHtml = `
-                <div class="relative mb-4">
-                    <div class="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                <div class="relative mb-5">
+                    <div class="text-base font-bold text-gray-700 mb-2 flex items-center gap-2">
                         <i class="fas fa-car text-gray-400"></i> ${carName}
                     </div>
-                    <div class="relative w-full h-10 bg-green-500 rounded-lg overflow-hidden shadow-inner border border-gray-200">
+                    <div class="relative w-full h-12 bg-green-500 rounded-lg overflow-hidden shadow-inner border border-gray-200">
                 `;
 
                 if (isBlocked) {
-                    rowHtml += `<div class="absolute top-0 left-0 w-full h-full bg-gray-800 flex items-center justify-center text-white text-xs font-bold tracking-widest uppercase shadow-md z-10">DIBLOKIR ADMIN</div>`;
+                    rowHtml += `<div class="absolute top-0 left-0 w-full h-full bg-gray-800 flex items-center justify-center text-white text-sm font-bold tracking-widest uppercase shadow-md z-10">DIBLOKIR ADMIN</div>`;
                 } else {
                     bookingsForCar.forEach(b => {
                         let sMins = timeToMins(b.start);
@@ -439,18 +407,18 @@
                         let widthPct = ((eMins - sMins) / 1440) * 100;
                         
                         rowHtml += `
-                        <div class="absolute top-0 h-full bg-red-500 border-r-2 border-white flex flex-col justify-center text-[10px] text-white hover:bg-red-600 transition cursor-pointer shadow-md group" 
+                        <div class="absolute top-0 h-full bg-red-500 border-r-2 border-white flex flex-col justify-center text-xs text-white hover:bg-red-600 transition cursor-pointer shadow-lg group" 
                              style="left: ${leftPct}%; width: ${widthPct}%;" 
                              onclick="alert('Peminjam: ${b.name}\\nJam: ${b.start} - ${b.end} WIB\\nTujuan: ${b.tujuan}')">
-                            <span class="truncate px-1.5 font-bold drop-shadow-md z-10">${b.name}</span>
-                            <span class="truncate px-1.5 opacity-80 text-[9px] hidden md:block z-10">${b.start} - ${b.end}</span>
+                            <span class="truncate px-2 font-bold drop-shadow-md z-10">${b.name}</span>
+                            <span class="truncate px-2 opacity-90 text-[10px] hidden md:block z-10">${b.start} - ${b.end}</span>
                         </div>`;
                     });
                 }
                 
                 rowHtml += `
                     </div>
-                    <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1 font-semibold">
+                    <div class="flex justify-between text-xs text-gray-400 mt-2 px-1 font-bold">
                         <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
                     </div>
                 </div>`;
@@ -508,10 +476,10 @@
                 const optCarId = carSelectElem.options[i].value;
                 if(!originalCarTexts[optCarId]) continue;
 
-                // Cek blokir Admin harian (hanya butuh parameter tanggal)
+                // Cek blokir Admin harian
                 let isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === optCarId && b.type === 'block');
                 
-                // Cek bentrok jam peminjam lain (butuh parameter jam)
+                // Cek bentrok jam peminjam lain
                 let isTimeConflict = false;
                 if (start && end) {
                     isTimeConflict = Peminjamans.some(b => {
@@ -535,7 +503,7 @@
                 }
             }
 
-            // Jika mobil yang SEDANG ter-select ikut ter-disable, otomatis pindah ke mobil yang tersedia
+            // Pindah pilihan dropdown jika mobil ter-disable
             if(carSelectElem.options[carSelectElem.selectedIndex] && carSelectElem.options[carSelectElem.selectedIndex].disabled) {
                 let availableOption = Array.from(carSelectElem.options).find(opt => !opt.disabled);
                 carSelectElem.value = availableOption ? availableOption.value : "";
@@ -573,36 +541,6 @@
                 btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnSubmit.innerHTML = tempEditingData ? "<i class='fas fa-save'></i> Simpan Perubahan" : "Konfirmasi Peminjaman";
             }
-        }
-
-        // FUNGSI PENGIRIMAN FEEDBACK
-        async function submitFeedback(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnFeedback');
-            const originalBtnText = btn.innerHTML;
-            
-            const fbName = document.getElementById('fbName').value || "Anonim";
-            const fbEmail = document.getElementById('fbEmail').value || "-";
-            const fbMessage = document.getElementById('fbMessage').value;
-
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Mengirim...";
-            btn.disabled = true;
-
-            try {
-                // Menembak ke Google Apps Script yang sama dengan action khusus 'feedback'
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'feedback', name: fbName, email: fbEmail, message: fbMessage })
-                });
-                
-                alert("✅ Terima kasih! Masukan Anda telah dikirim ke Admin/Developer.");
-                document.getElementById('feedbackForm').reset();
-            } catch(error) {
-                alert("❌ Gagal mengirim masukan. Pastikan koneksi internet Anda stabil.");
-            }
-            
-            btn.innerHTML = originalBtnText;
-            btn.disabled = false;
         }
 
         function populateDropdown(elementId, dataArray, defaultText) {
@@ -655,12 +593,12 @@
                 
                 let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700"; let borderClass = "border-gray-200";
                 if (dayPeminjamans.length >= 3) { bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300"; } 
-                else if (dayPeminjamans.length > 0) { bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300"; }
+                else if (dayPeminjamans.length > 0) { bgClass = "bg-yellow-50 text-yellow-800 font-semibold hover:bg-yellow-100"; borderClass = "border-yellow-400"; }
 
                 calendarGrid.innerHTML += `
-                    <div onclick="window.selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
+                    <div onclick="window.selectDate('${dateStr}')" class="h-14 md:h-20 flex flex-col justify-center items-center rounded-lg cursor-pointer border ${borderClass} ${bgClass} transition text-sm md:text-base relative shadow-sm hover:shadow-md">
                         <span>${i}</span>
-                        ${dayPeminjamans.length > 0 ? `<span class="hidden md:block text-[9px] mt-1">${dayPeminjamans.length} Booked</span>` : ''}
+                        ${dayPeminjamans.length > 0 ? `<span class="text-[10px] md:text-xs mt-1 bg-white bg-opacity-50 px-1 rounded">${dayPeminjamans.length} Peminjam</span>` : ''}
                     </div>
                 `;
             }
@@ -678,7 +616,7 @@
                 modalContent.innerHTML = "";
                 
                 if (dayPeminjamans.length === 0) {
-                    modalContent.innerHTML = `<div class="text-center text-gray-400 py-10"><i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i><p>Kosong</p></div>`;
+                    modalContent.innerHTML = `<div class="text-center text-gray-400 py-10"><i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i><p>Tidak ada peminjaman</p></div>`;
                 } else {
                     dayPeminjamans.forEach(b => {
                         const isBlock = b.type === 'block';
@@ -691,14 +629,14 @@
                                     <span>${b.name}</span>
                                     ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir Admin</span>' : ''}
                                 </div>
-                                <div class="space-y-2 opacity-90 text-xs">
-                                    <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4"></i> <span class="font-semibold flex items-center">${b.car}${warnaLabel}</span></div>
-                                    <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4"></i> <span>${b.start} - ${b.end} WIB</span></div>
-                                    ${!isBlock ? `<div class="flex items-start gap-2 mt-1"><i class="fas fa-bullseye text-purple-500 w-4"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
+                                <div class="space-y-2 opacity-90 text-sm">
+                                    <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-5"></i> <span class="font-semibold flex items-center">${b.car}${warnaLabel}</span></div>
+                                    <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-5"></i> <span>${b.start} - ${b.end} WIB</span></div>
+                                    ${!isBlock ? `<div class="flex items-start gap-2 mt-1"><i class="fas fa-bullseye text-purple-500 w-5 mt-1"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                                 </div>
-                                <div class="flex justify-end gap-3 mt-3 pt-3 border-t border-gray-200 opacity-90">
-                                    <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-3 py-1.5 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
-                                    <button onclick="initAction('${b.id}', 'delete')" class="text-red-600 hover:text-red-800 text-xs font-semibold px-3 py-1.5 bg-red-50 rounded hover:bg-red-100 transition flex items-center"><i class="fas fa-trash mr-1"></i> Hapus</button>
+                                <div class="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-200 opacity-90">
+                                    <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-sm font-semibold px-3 py-1.5 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
+                                    <button onclick="initAction('${b.id}', 'delete')" class="text-red-600 hover:text-red-800 text-sm font-semibold px-3 py-1.5 bg-red-50 rounded hover:bg-red-100 transition flex items-center"><i class="fas fa-trash mr-1"></i> Hapus</button>
                                 </div>
                             </div>
                         `;
@@ -790,7 +728,7 @@
                     let textTujuan = keyTujuan ? b[keyTujuan] : "-";
                     return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
                 });
-                updateCalendar(); renderPeminjamanList(); renderTimeline();
+                updateCalendar(); renderTimeline();
             } catch (error) {}
 
             // CEK FINAL BENTROK SETELAH SINKRON
@@ -842,7 +780,7 @@
             }));
 
             Peminjamans.push(...newPeminjamans);
-            updateCalendar(); renderPeminjamanList(); renderTimeline(); checkAvailability(); 
+            updateCalendar(); renderTimeline(); checkAvailability(); 
             
             try {
                 await Promise.all(newPeminjamans.map(b => fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...b }) })));
@@ -899,7 +837,7 @@
                     if(response.status === "success") {
                         alert("Pesanan berhasil dihapus!");
                         Peminjamans = Peminjamans.filter(b => b.id != actionId);
-                        updateCalendar(); renderPeminjamanList(); renderTimeline(); closeOtpModal();
+                        updateCalendar(); renderTimeline(); closeOtpModal();
                     } else { alert(response.message || "OTP Salah!"); }
                 } else if (actionType === 'edit') {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
@@ -914,7 +852,7 @@
 
         async function deleteDirect(id, otp) {
             Peminjamans = Peminjamans.filter(b => b.id != id);
-            updateCalendar(); renderPeminjamanList(); renderTimeline();
+            updateCalendar(); renderTimeline();
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id, otp: otp }) });
         }
 
@@ -942,7 +880,7 @@
             
             const submitBtn = document.getElementById('submitBtnMain');
             submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
-            submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3.5 rounded-lg shadow-lg transition transform active:scale-95 text-lg";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
@@ -959,50 +897,11 @@
             
             const submitBtn = document.getElementById('submitBtnMain');
             submitBtn.innerHTML = "Konfirmasi Peminjaman";
-            submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+            submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg shadow-lg transition transform active:scale-95 text-lg";
             submitBtn.disabled = false;
             document.getElementById('cancelEditBtn').classList.add('hidden');
             
             checkAvailability();
-        }
-
-        function renderPeminjamanList() {
-            const list = document.getElementById('PeminjamanList');
-            const search = document.getElementById('searchBook').value.toLowerCase();
-            const countSpan = document.getElementById('totalPeminjamans');
-            list.innerHTML = "";
-            
-            let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
-            countSpan.innerText = filtered.length;
-            filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
-
-            if (filtered.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return; }
-
-            filtered.forEach(b => {
-                const isBlock = b.type === 'block';
-                const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
-                let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
-
-                list.innerHTML += `
-                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
-                        <div class="font-bold flex justify-between items-start">
-                            <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
-                        </div>
-                        <div class="text-xs mt-2 opacity-100 ${isBlock ? 'text-gray-200' : 'text-gray-800'} space-y-1.5">
-                            <div class="flex items-center"><i class="fas fa-car w-5 text-center text-blue-500"></i> <span>${b.car}${warnaLabel}</span></div>
-                            ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
-                        </div>
-                        <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex gap-4">
-                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
-                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
-                        </div>
-                        <div class="flex justify-end gap-3 mt-3 pt-3 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-90">
-                            <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2 py-1 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
-                            <button onclick="initAction('${b.id}', 'delete')" class="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition flex items-center"><i class="fas fa-trash mr-1"></i> Hapus</button>
-                        </div>
-                    </div>
-                `;
-            });
         }
 
         function toggleAdminMode() {
@@ -1023,7 +922,6 @@
                 document.getElementById('isBlock').checked = false;
                 document.getElementById('isBlock').dispatchEvent(new Event('change'));
             }
-            renderPeminjamanList();
             checkAvailability();
         }
 
