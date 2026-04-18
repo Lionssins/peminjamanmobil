@@ -7,12 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <style>
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -227,12 +229,56 @@
 
                 <div class="flex flex-col-reverse md:flex-row gap-3 w-full mt-2">
                     <button onclick="window.closeAgreementModal()" class="w-full md:w-1/3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-3 rounded-lg shadow transition">Batal</button>
-                    
                     <button id="btnAgreeContinue" onclick="executePeminjaman()" disabled class="w-full md:w-2/3 bg-gray-400 text-white font-bold px-6 py-3 rounded-lg shadow transition flex items-center justify-center gap-2 cursor-not-allowed">
                         Setuju & Kirim <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="pdfRenderWrapper" style="position: absolute; left: -9999px; top: 0; width: 800px; z-index: -10;">
+        <div id="pdfRenderContainer" style="padding: 40px; font-family: Helvetica, Arial, sans-serif; color: #000; background: #fff; width: 800px; box-sizing: border-box;">
+            <h2 style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; font-size: 20px; text-transform: uppercase;">Surat Persetujuan Peminjaman Mobil</h2>
+            
+            <p style="margin-top: 20px; margin-bottom: 16px; text-align: justify; line-height: 1.6;">Yang bertanda tangan di bawah ini (Peminjam), menyetujui syarat dan ketentuan penggunaan kendaraan operasional perusahaan sebagai berikut:</p>
+            
+            <ol style="margin-bottom: 30px; padding-left: 24px; text-align: justify; line-height: 1.8;">
+                <li>Bertanggung jawab sepenuhnya terhadap kehilangan dan kerusakan kendaraan selama pemakaian.</li>
+                <li>Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat, dan menjaga kebersihan.</li>
+                <li>Tidak mengemudikan kendaraan diatas batas maksimum kecepatan dan mentaati peraturan lalu lintas.</li>
+                <li>Mengisi kembali BBM yang terpakai sesuai dengan aturan (minimal seperti semula sebelum memakai).</li>
+                <li>Mengembalikan mobil sesuai dengan tanggal dan waktu yang sudah tertera pada form.</li>
+                <li>Apabila terjadi keterlambatan pengembalian mobil, permintaan peminjaman mobil ditangguhkan selama 30 hari.</li>
+                <li>Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : Lita).</li>
+                <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan BBM dikirim by WA.</li>
+            </ol>
+
+            <p style="font-weight: bold; margin-bottom: 10px;">Detail Peminjaman:</p>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; font-size: 14px;">
+                <tr><td style="width: 150px; padding: 4px 0;">Nama Lengkap</td><td id="pdfDetName">: </td></tr>
+                <tr><td style="padding: 4px 0;">Mobil</td><td id="pdfDetCar">: </td></tr>
+                <tr><td style="padding: 4px 0;">Tanggal</td><td id="pdfDetDate">: </td></tr>
+                <tr><td style="padding: 4px 0;">Waktu</td><td id="pdfDetTime">: </td></tr>
+                <tr><td style="padding: 4px 0;">Tujuan</td><td id="pdfDetTujuan">: </td></tr>
+            </table>
+
+            <table style="width: 100%; text-align: center; font-size: 14px;">
+                <tr>
+                    <td style="width: 50%; vertical-align: bottom;">
+                        <p style="margin-bottom: 70px;">Mengetahui,</p>
+                        <p style="font-weight: bold; text-decoration: underline;">Admin General Affairs</p>
+                        <p id="pdfDateSecret" style="font-size: 12px; margin-top: 4px; color: #333;"></p>
+                    </td>
+                    <td style="width: 50%; vertical-align: bottom;">
+                        <p style="margin-bottom: 10px;">Peminjam,</p>
+                        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+                            <div id="qrcodeSecret" style="padding: 4px; border: 1px solid #333; background: white;"></div>
+                        </div>
+                        <p id="pdfBorrowerNameSecret" style="font-weight: bold; text-decoration: underline;"></p>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
@@ -780,6 +826,27 @@
             if(isAdmin && isBlock) { 
                 executePeminjaman(); 
             } else { 
+                
+                // Mengisi data untuk dirender ke dalam Canvas HTML2PDF secara sembunyi-sembunyi
+                const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('pdfBorrowerNameSecret').innerText = name;
+                document.getElementById('pdfDateSecret').innerText = todayStr;
+                
+                document.getElementById('pdfDetName').innerText = `: ${name} (${divisi})`;
+                document.getElementById('pdfDetCar').innerText = `: ${car}`;
+                
+                let dateText = dateArray.length > 1 ? `${dateArray[0]} s/d ${dateArray[dateArray.length-1]}` : dateArray[0];
+                document.getElementById('pdfDetDate').innerText = `: ${dateText}`;
+                document.getElementById('pdfDetTime').innerText = `: ${start} - ${end} WIB`;
+                document.getElementById('pdfDetTujuan').innerText = `: ${tujuan}`;
+
+                const qrContainer = document.getElementById('qrcodeSecret');
+                qrContainer.innerHTML = ""; 
+                new QRCode(qrContainer, {
+                    text: `Tanda Tangan Digital\nNama: ${name}\nTanggal: ${todayStr}`,
+                    width: 70, height: 70, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+                });
+
                 document.getElementById('displayTargetEmail').innerText = email;
                 document.getElementById('agreeCheckbox').checked = false;
                 window.toggleAgreeButton();
@@ -793,8 +860,31 @@
 
             const { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan } = tempBookingData;
 
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses Dokumen...";
             btn.disabled = true;
+            
+            // --- PROSES GENERATE PDF SECARA RAHASIA ---
+            let pdfBase64 = "";
+            if (!isBlock) {
+                // Beri waktu 500ms agar QR Code selesai ter-render di DOM
+                await new Promise(r => setTimeout(r, 500)); 
+                
+                const element = document.getElementById('pdfRenderContainer');
+                const opt = {
+                    margin:       15,
+                    filename:     'temp.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                try {
+                    // Output sebagai string Base64 alih-alih mengunduh
+                    pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+                } catch(e) {
+                    console.log("Gagal membuat PDF di frontend");
+                }
+            }
 
             const newPeminjamans = dateArray.map((date, index) => ({
                 id: Date.now().toString() + index, 
@@ -805,7 +895,9 @@
                 car: car, 
                 tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
                 date: date, start: start, end: end,
-                type: isAdmin && isBlock ? 'block' : 'Peminjaman'
+                type: isAdmin && isBlock ? 'block' : 'Peminjaman',
+                pdfData: index === 0 ? pdfBase64 : "", // Hanya kirim PDF di data pertama agar tidak double email
+                sendEmail: index === 0 ? true : false
             }));
 
             Peminjamans.push(...newPeminjamans);
@@ -821,7 +913,7 @@
                 setTimeout(() => { fetchPeminjamans(); }, 3000);
             } catch(e) {}
 
-            alert(isAdmin && isBlock ? `Berhasil diblokir!` : "Peminjaman Berhasil Dicatat! Surat Persetujuan (PDF) telah dikirim ke Email pemesan.");
+            alert(isAdmin && isBlock ? `Berhasil diblokir!` : "Peminjaman Berhasil Dicatat! Surat Persetujuan PDF telah dikirim ke Email pemesan.");
             resetFormState();
             tempBookingData = null;
         }
