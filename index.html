@@ -120,10 +120,6 @@
                         </div>
                     </div>
 
-                    <div id="timeConflictError" class="hidden col-span-1 md:col-span-4 p-3 bg-red-100 border-l-4 border-red-600 text-red-700 text-sm font-bold rounded">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> BENTROK! Waktu yang Anda masukkan sudah terisi. Silakan cek visualisasi di bawah dan ubah jam.
-                    </div>
-
                     <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         <label class="flex items-center gap-2 font-bold cursor-pointer">
                             <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Mobil Spesifik (Admin)
@@ -140,32 +136,24 @@
                 </form>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-500">
-                <h3 class="text-lg md:text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
-                    <i class="fas fa-route text-green-600"></i> Visualisasi Jam Ketersediaan
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Pilih Tanggal</label>
-                        <input type="date" id="timelineDate" class="w-full border rounded-lg p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-green-500" onchange="renderTimeline()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Pilih Mobil</label>
-                        <select id="timelineCar" class="w-full border rounded-lg p-2 bg-gray-50 text-sm focus:ring-2 focus:ring-green-500" onchange="renderTimeline()">
-                            <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
-                            <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
-                            <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
-                        </select>
+            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-indigo-600">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-5 gap-3">
+                    <h3 class="text-xl font-bold flex items-center gap-2 text-indigo-800">
+                        <i class="fas fa-chart-gantt"></i> Visualisasi Jam Mobil
+                    </h3>
+                    <div class="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                        <label class="text-sm font-semibold text-indigo-700">Pilih Tanggal:</label>
+                        <input type="date" id="timelineDate" class="border-none bg-transparent outline-none font-bold text-indigo-900 cursor-pointer" onchange="renderTimeline()">
                     </div>
                 </div>
-
-                <div class="relative w-full h-16 md:h-20 bg-green-500 rounded-lg overflow-hidden border border-gray-300 shadow-inner" id="timelineContainer">
+                
+                <div id="timelineContainer" class="space-y-5">
                     </div>
                 
-                <div class="mt-4 flex gap-4 text-xs font-bold justify-center">
-                    <span class="flex items-center gap-1"><div class="w-4 h-4 bg-green-500 rounded border border-green-700"></div> KOSONG (Bisa Dipinjam)</span>
-                    <span class="flex items-center gap-1"><div class="w-4 h-4 bg-red-600 rounded border border-red-800"></div> DIPAKAI</span>
+                <div class="flex gap-4 text-xs mt-6 justify-center bg-gray-50 py-2 rounded-lg border border-gray-200">
+                    <span class="flex items-center gap-1 font-semibold text-green-700"><div class="w-3 h-3 bg-green-500 rounded-sm"></div> Kosong / Tersedia</span>
+                    <span class="flex items-center gap-1 font-semibold text-red-700"><div class="w-3 h-3 bg-red-500 rounded-sm"></div> Sedang Dipakai</span>
+                    <span class="flex items-center gap-1 font-semibold text-gray-800"><div class="w-3 h-3 bg-gray-800 rounded-sm"></div> Diblokir Admin</span>
                 </div>
             </div>
 
@@ -239,10 +227,12 @@
     <div id="otpModal" style="display: none; z-index: 9999;" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
             <h3 class="text-lg font-bold mb-2 border-b pb-2">Verifikasi OTP</h3>
+            
             <div id="otpStep1" class="text-center py-8">
                 <i class="fas fa-spinner fa-spin text-blue-600 text-4xl mb-3"></i>
                 <p class="text-sm text-gray-600 font-medium" id="otpTextLoading">Mencari Data & Mengirim OTP...</p>
             </div>
+            
             <div id="otpStep2" class="hidden py-4">
                 <p class="text-sm text-gray-700 mb-4 text-center bg-blue-50 p-3 rounded" id="otpText"></p>
                 <input type="text" id="verifyOtpInput" class="w-full border rounded-lg p-3 mb-4 tracking-[0.5em] text-center text-xl font-bold bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="• • • • • •" maxlength="6">
@@ -277,7 +267,6 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let selectedDateForPeminjaman = "";
-        let lastAlertedConflict = false; // State untuk cegah spam alert
         
         let tempBookingData = null;
         let tempEditingData = null; 
@@ -288,6 +277,10 @@
             setupYearSelect();
             document.getElementById('monthSelect').value = currentMonth;
             document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            
+            // Set default date for timeline to today
+            document.getElementById('timelineDate').value = formatDisplayDate(new Date());
+
             fetchPeminjamans();
 
             document.getElementById('isBlock').addEventListener('change', function() {
@@ -297,10 +290,12 @@
                 if(isChecked) {
                     document.getElementById('startTime').value = "00:00";
                     document.getElementById('endTime').value = "23:59";
+                    checkAvailability(); // Re-check when blocked
                 }
             });
         });
 
+        // UTILITAS WAKTU 24-JAM
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
@@ -310,10 +305,12 @@
                 }
                 if (typeof val === 'string' && val.includes(':')) {
                     let str = val.toLowerCase().trim();
-                    let isPM = str.includes('pm'), isAM = str.includes('am');
+                    let isPM = str.includes('pm');
+                    let isAM = str.includes('am');
                     str = str.replace(/[a-z]/gi, '').trim();
                     let parts = str.split(':');
-                    let h = parseInt(parts[0], 10) || 0, m = parseInt(parts[1], 10) || 0;
+                    let h = parseInt(parts[0], 10) || 0;
+                    let m = parseInt(parts[1], 10) || 0;
                     if (isPM && h < 12) h += 12;
                     if (isAM && h === 12) h = 0;
                     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -322,165 +319,214 @@
             } catch(e) { return val; }
         }
 
+        // UTILITAS TANGGAL
         function formatDisplayDate(val) {
             try {
                 if (!val) return "-";
                 let d = new Date(val);
                 if (isNaN(d.getTime())) return String(val).split('T')[0];
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             } catch(e) { return val; }
+        }
+
+        // KONVERSI JAM KE MENIT UNTUK VISUALISASI TIMELINE
+        function timeToMins(t) {
+            if(!t || t === "-") return 0;
+            let parts = t.split(':');
+            return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
         }
 
         async function fetchPeminjamans() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
-                if (textData.trim().startsWith('<')) throw new Error("URL Salah.");
-                const parsedData = JSON.parse(textData);
                 
+                if (textData.trim().startsWith('<')) throw new Error("URL Salah/Akses Diblokir.");
+                const parsedData = JSON.parse(textData);
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
+
                 Peminjamans = rawPeminjamans.map(b => {
                     let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
-                    return { ...b, tujuan: keyTujuan ? b[keyTujuan] : "-", date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
+                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
+                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
                 });
 
                 dataKaryawan = parsedData.karyawan || [];
                 let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
+                
                 if(uniqueDivisi.length > 0) populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
+                else document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Kosong</option>`;
                 
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
-                updateCalendar(); renderPeminjamanList(); 
-
-                // Setup awal Visualisasi Timeline mengikuti hari ini atau data yg ada
-                let todayStr = formatDisplayDate(new Date());
-                document.getElementById('timelineDate').value = document.getElementById('startDate').value || todayStr;
-                renderTimeline();
-
+                
+                updateCalendar(); 
+                renderPeminjamanList(); 
+                renderTimeline(); // Render UI Timeline
             } catch (error) {
-                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 rounded p-2'>❌ Gagal menarik data.</div>`;
+                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
             }
         }
 
-        // FUNGSI RENDER VISUALISASI TIMELINE BARU
-        window.renderTimeline = function() {
-            const date = document.getElementById('timelineDate').value;
-            const car = document.getElementById('timelineCar').value;
+        // FUNGSI BARU: RENDER VISUALISASI TIMELINE HARIAN
+        function renderTimeline() {
+            let dateStr = document.getElementById('timelineDate').value;
+            if(!dateStr) return;
+
             const container = document.getElementById('timelineContainer');
-            
-            // Render skala jam background (00:00 - 24:00)
-            let html = ``;
-            for(let i=0; i<=24; i+=2) {
-                let left = (i/24)*100;
-                html += `<div class="absolute top-0 bottom-0 border-l border-white opacity-40" style="left: ${left}%"></div>`;
-                if (i < 24) html += `<div class="absolute bottom-1 text-[8px] md:text-[10px] text-white opacity-90 font-bold" style="left: calc(${left}% + 2px)">${String(i).padStart(2,'0')}:00</div>`;
+            container.innerHTML = '';
+
+            const dayBookings = Peminjamans.filter(b => b.date === dateStr);
+
+            Object.keys(originalCarTexts).forEach(carId => {
+                let carName = originalCarTexts[carId];
+                let bookingsForCar = dayBookings.filter(b => b.car === carId);
+                
+                let isBlocked = bookingsForCar.some(b => b.type === 'block');
+
+                let rowHtml = `
+                <div class="relative mb-4">
+                    <div class="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                        <i class="fas fa-car text-gray-400"></i> ${carName}
+                    </div>
+                    <div class="relative w-full h-10 bg-green-500 rounded-lg overflow-hidden shadow-inner border border-gray-200">
+                `;
+
+                if (isBlocked) {
+                    rowHtml += `<div class="absolute top-0 left-0 w-full h-full bg-gray-800 flex items-center justify-center text-white text-xs font-bold tracking-widest uppercase shadow-md z-10">DIBLOKIR ADMIN</div>`;
+                } else {
+                    bookingsForCar.forEach(b => {
+                        let sMins = timeToMins(b.start);
+                        let eMins = timeToMins(b.end);
+                        
+                        // Validasi agar balok tidak error jika waktu salah
+                        if (eMins <= sMins) return; 
+
+                        let leftPct = (sMins / 1440) * 100;
+                        let widthPct = ((eMins - sMins) / 1440) * 100;
+                        
+                        rowHtml += `
+                        <div class="absolute top-0 h-full bg-red-500 border-r-2 border-white flex flex-col justify-center text-[10px] text-white hover:bg-red-600 transition cursor-pointer shadow-md group" 
+                             style="left: ${leftPct}%; width: ${widthPct}%;" 
+                             onclick="alert('Peminjam: ${b.name}\\nJam: ${b.start} - ${b.end} WIB\\nTujuan: ${b.tujuan}')">
+                            <span class="truncate px-1.5 font-bold drop-shadow-md z-10">${b.name}</span>
+                            <span class="truncate px-1.5 opacity-80 text-[9px] hidden md:block z-10">${b.start} - ${b.end}</span>
+                        </div>`;
+                    });
+                }
+                
+                rowHtml += `
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1 font-semibold">
+                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+                    </div>
+                </div>`;
+                
+                container.innerHTML += rowHtml;
+            });
+        }
+
+        // FUNGSI CEK BENTROK REAL-TIME & FIX BUG TANGGAL INFINITE
+        function checkAvailability() {
+            const startDateElem = document.getElementById('startDate');
+            const endDateElem = document.getElementById('endDate');
+            const startTimeElem = document.getElementById('startTime');
+            const endTimeElem = document.getElementById('endTime');
+            const carSelectElem = document.getElementById('carSelect');
+            const btnSubmit = document.getElementById('submitBtnMain');
+
+            let startDateStr = startDateElem.value;
+            let endDateStr = endDateElem.value;
+
+            // ==========================================
+            // FIX BUG 1: MENCEGAH INFINITE LOOP WEB FREEZE
+            // Jika tanggal akhir ternyata lebih awal (lebih kecil) dari tanggal mulai
+            // ==========================================
+            if (startDateStr && endDateStr) {
+                if (new Date(endDateStr) < new Date(startDateStr)) {
+                    alert("⚠️ KESALAHAN INPUT: Tanggal Akhir tidak boleh lebih awal dari Tanggal Mulai!\n\nSistem otomatis menyamakan tanggal akhir dengan tanggal mulai.");
+                    endDateElem.value = startDateStr;
+                    endDateStr = startDateStr;
+                }
+            }
+            if (!endDateStr) endDateStr = startDateStr; // Fallback aman
+
+            // Sinkronkan visualisasi timeline otomatis dengan tanggal yang dipilih user
+            if (startDateStr) {
+                document.getElementById('timelineDate').value = startDateStr;
+                renderTimeline();
             }
 
-            if (!date || !car) { container.innerHTML = html; return; }
+            const start = startTimeElem.value;
+            const end = endTimeElem.value;
+            const carVal = carSelectElem.value;
 
-            const dayBookings = Peminjamans.filter(b => b.date === date && b.car === car);
+            if (!startDateStr || !start || !end || !carVal) return;
 
-            dayBookings.forEach(b => {
-                let sParts = b.start.split(':'), eParts = b.end.split(':');
-                let sMin = (parseInt(sParts[0]) * 60) + parseInt(sParts[1]);
-                let eMin = (parseInt(eParts[0]) * 60) + parseInt(eParts[1]);
-                if (eMin === 0) eMin = 1440; // Handler tutup jam 24:00
-
-                let left = (sMin / 1440) * 100;
-                let width = ((eMin - sMin) / 1440) * 100;
-
-                let labelText = (width > 12) ? `${b.name.split(' ')[0]}<br><span class="text-[8px] md:text-[10px] opacity-90">${b.start}-${b.end}</span>` : ``;
-
-                html += `
-                    <div class="absolute top-0 bottom-0 bg-red-600 border-x border-red-800 flex flex-col justify-center items-center text-white text-[10px] md:text-xs overflow-hidden cursor-help hover:bg-red-700 transition shadow-lg z-10" 
-                         style="left: ${left}%; width: ${width}%;" 
-                         title="Nama: ${b.name}\nTujuan: ${b.tujuan}\nJam: ${b.start} - ${b.end}">
-                        <span class="px-1 text-center font-bold leading-tight truncate w-full">${labelText}</span>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        };
-
-        // CEK KETERSEDIAAN + REAL-TIME POPUP ALERT
-        function checkAvailability() {
-            const startDateStr = document.getElementById('startDate').value;
-            const endDateStr = document.getElementById('endDate').value || startDateStr; 
-            const start = document.getElementById('startTime').value;
-            const end = document.getElementById('endTime').value;
-            const carSelect = document.getElementById('carSelect');
-
-            if (!startDateStr) return;
-
-            // Update Tanggal & Mobil di Timeline agar Auto-Sync dengan Form yang diisi user
-            document.getElementById('timelineDate').value = startDateStr;
-            document.getElementById('timelineCar').value = carSelect.value;
-            renderTimeline();
-
+            // Generate rentang multi-hari dengan aman (sudah dicegah bug-nya di atas)
             const dateArray = [];
-            let loopDate = new Date(startDateStr), endD = new Date(endDateStr);
-            if (endD < loopDate) endD = loopDate;
+            let loopDate = new Date(startDateStr);
+            let endD = new Date(endDateStr);
             while (loopDate <= endD) {
-                dateArray.push(`${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, '0')}-${String(loopDate.getDate()).padStart(2, '0')}`);
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            let conflictForSelectedCar = false; // Penanda jika bentrok di form saat ini
+            // ==========================================
+            // FIX BUG 2: REAL-TIME POPUP BENTROK
+            // ==========================================
+            let hasConflict = false;
+            let conflictMsg = "";
 
-            for(let i = 0; i < carSelect.options.length; i++) {
-                const carVal = carSelect.options[i].value;
-                if(!originalCarTexts[carVal]) continue;
+            const isBlockAdmin = isAdmin && document.getElementById('isBlock').checked;
 
-                let isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
-                let isTimeConflict = false;
+            for (const date of dateArray) {
+                const conflict = Peminjamans.find(b => {
+                    if (b.date !== date || b.car !== carVal) return false;
+                    if (tempEditingData && b.id == tempEditingData.id) return false; // Abaikan data yg sedang di-edit
+                    if (b.type === 'block') return true; // Blokir menabrak semua jam
+                    return (start < b.end && end > b.start); // Logika tumpang tindih waktu
+                });
 
-                if (start && end) {
-                    isTimeConflict = Peminjamans.some(b => {
-                        if (!dateArray.includes(b.date) || b.car !== carVal || b.type === 'block') return false; 
-                        if (tempEditingData && b.id == tempEditingData.id) return false; 
-                        return (start < b.end && end > b.start);
-                    });
-                }
-
-                // Trigger Alert real-time hanya pada mobil yang SEDANG AKTIF dipilih
-                if (carVal === carSelect.value && (isTimeConflict || isBlocked)) {
-                    conflictForSelectedCar = true;
-                }
-
-                if(isBlocked) {
-                    carSelect.options[i].disabled = true; carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
-                } else if (isTimeConflict) {
-                    carSelect.options[i].disabled = true; carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIPAKAI";
-                } else {
-                    carSelect.options[i].disabled = false; carSelect.options[i].text = originalCarTexts[carVal];
+                // Jika terdeteksi bentrok dan yang mengisi bukan admin yang sedang melakukan Override/Blokir
+                if (conflict && !isBlockAdmin) {
+                    hasConflict = true;
+                    if (conflict.type === 'block') {
+                        conflictMsg = `Mobil sedang DIBLOKIR oleh Admin pada tanggal ${date}.`;
+                    } else {
+                        conflictMsg = `JADWAL BENTROK!\n\nMobil ini sudah dipesan oleh:\n👤 Nama: ${conflict.name}\n🕒 Jam: ${conflict.start} - ${conflict.end} WIB\n📅 Tanggal: ${date}\n\nSilakan pilih jam lain atau gunakan mobil yang berbeda.`;
+                    }
+                    break; 
                 }
             }
 
-            // MUNCULKAN POPUP & BERSIHKAN FORM JIKA BENTROK
-            if (conflictForSelectedCar) {
-                if (!lastAlertedConflict) {
-                    alert("⚠️ JADWAL BENTROK!\n\nJam atau tanggal yang Anda pilih pada mobil ini sudah dipesan oleh orang lain.\n\nSilakan cek balok merah pada Visualisasi Ketersediaan di bawah, lalu ubah Jam Mulai / Jam Selesai Anda.");
-                    lastAlertedConflict = true;
-                    
-                    document.getElementById('endTime').value = ""; // Paksa user ngisi ulang
-                    document.getElementById('timeConflictError').classList.remove('hidden'); // Tampilkan pesan merah inline
-                }
+            if (hasConflict) {
+                // MUNCULKAN NOTIFIKASI SEKETIKA
+                alert("🚫 " + conflictMsg);
+                
+                // Reset isian jam agar user dipaksa mengubahnya
+                startTimeElem.value = "";
+                endTimeElem.value = "";
+                
+                // Matikan tombol submit
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                btnSubmit.innerHTML = "<i class='fas fa-ban'></i> Jadwal Bentrok";
             } else {
-                lastAlertedConflict = false; // Reset jika sudah aman
-                document.getElementById('timeConflictError').classList.add('hidden'); // Sembunyikan pesan merah
-            }
-
-            // Jika mobil current ter-disable, geser otomatis ke yg kosong (jika ada)
-            if(carSelect.options[carSelect.selectedIndex] && carSelect.options[carSelect.selectedIndex].disabled && !conflictForSelectedCar) {
-                let availableOption = Array.from(carSelect.options).find(opt => !opt.disabled);
-                if (availableOption) {
-                    carSelect.value = availableOption.value;
-                    document.getElementById('timelineCar').value = availableOption.value;
-                    renderTimeline();
-                } else { carSelect.value = ""; }
+                // Jika aman, hidupkan kembali tombol
+                btnSubmit.disabled = false;
+                btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSubmit.innerHTML = tempEditingData ? "<i class='fas fa-save'></i> Simpan Perubahan" : "Konfirmasi Peminjaman";
             }
         }
 
+        // FUNGSI LAINNYA (TIDAK ADA PERUBAHAN LOGIKA DARI VERSI SEBELUMNYA)
         function populateDropdown(elementId, dataArray, defaultText) {
             const select = document.getElementById(elementId);
             if(!select) return;
@@ -590,7 +636,7 @@
         window.goToPeminjamanForm = function() {
             window.closeModal();
             document.getElementById('startDate').value = selectedDateForPeminjaman;
-            checkAvailability();
+            checkAvailability(); // Memanggil trigger visualisasi
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         };
 
@@ -615,32 +661,45 @@
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
+            // ===== PENANGANAN SUBMIT EDIT =====
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
-                const editPayload = { action: 'edit', id: tempEditingData.id, otp: tempEditingData.otp, name, divisi, wa: empWa, email, car, tujuan, date: startDateStr, start, end, type: 'Peminjaman' };
+
+                const editPayload = {
+                    action: 'edit', id: tempEditingData.id, otp: tempEditingData.otp,
+                    name, divisi, wa: empWa, email, car, tujuan, date: startDateStr, start, end, type: 'Peminjaman'
+                };
+
                 try {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(editPayload) });
                     const response = await res.json();
                     if(response.status === 'success') {
-                        alert("Perubahan berhasil disimpan!"); fetchPeminjamans(); resetFormState();
+                        alert("Perubahan berhasil disimpan!");
+                        fetchPeminjamans(); 
+                        resetFormState();
                     } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 } catch(e) { alert("Error koneksi."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 return;
             }
 
-            const startDate = new Date(startDateStr), endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const startDate = new Date(startDateStr);
+            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
             const dateArray = [];
-            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
+
+            if (endDate < startDate) { alert("Sistem Error: Tanggal Akhir Keliru."); return; }
 
             let loopDate = new Date(startDate);
             while (loopDate <= endDate) {
-                dateArray.push(`${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, '0')}-${String(loopDate.getDate()).padStart(2, '0')}`);
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            // SINKRONISASI REAL-TIME
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Mengecek Sinkronisasi Jadwal...";
+            // SINKRONISASI SERVER SEBELUM PERSETUJUAN
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Sinkronisasi...";
             btn.disabled = true;
 
             try {
@@ -650,29 +709,37 @@
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
                 Peminjamans = rawPeminjamans.map(b => {
                     let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
-                    return { ...b, tujuan: keyTujuan ? b[keyTujuan] : "-", date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
+                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
+                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
                 });
                 updateCalendar(); renderPeminjamanList(); renderTimeline();
             } catch (error) {}
 
-            let hasConflict = false, conflictDates = [];
+            // CEK FINAL BENTROK SETELAH SINKRON
+            let hasConflict = false;
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => {
                     if (b.date !== date || b.car !== car) return false;
                     if (tempEditingData && b.id == tempEditingData.id) return false;
                     return (start < b.end && end > b.start);
                 });
-                if (conflict && !isAdmin) { hasConflict = true; conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); }
+                if (conflict && !isAdmin) { hasConflict = true; }
             }
 
             if (hasConflict) { 
-                alert(`GAGAL! JADWAL BENTROK:\n\nMobil ini ternyata baru saja dipesan pada waktu:\n${conflictDates.join('\n')}\n\nSilakan pilih jam lain atau mobil lain.`); 
-                btn.innerHTML = originalBtnText; btn.disabled = false; checkAvailability(); return; 
+                alert("GAGAL! Mobil tersebut ternyata baru saja disewa oleh orang lain beberapa detik yang lalu.\n\nSilakan cek jadwal visual terbaru."); 
+                btn.innerHTML = "Konfirmasi Peminjaman"; 
+                btn.disabled = false;
+                checkAvailability(); 
+                return; 
             }
 
-            btn.innerHTML = originalBtnText; btn.disabled = false;
+            btn.innerHTML = "Konfirmasi Peminjaman";
+            btn.disabled = false;
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan };
-            if(isAdmin && isBlock) { executePeminjaman(); } else { document.getElementById('agreementModal').style.display = 'flex'; }
+
+            if(isAdmin && isBlock) { executePeminjaman(); } 
+            else { document.getElementById('agreementModal').style.display = 'flex'; }
         }
 
         async function executePeminjaman() {
@@ -680,17 +747,24 @@
             document.getElementById('agreementModal').style.display = 'none';
 
             const { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan } = tempBookingData;
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses..."; btn.disabled = true;
+
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
+            btn.disabled = true;
 
             const newPeminjamans = dateArray.map((date, index) => ({
                 id: Date.now().toString() + index, 
-                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name, divisi: isAdmin && isBlock ? "-" : divisi,
-                wa: isAdmin && isBlock ? "-" : empWa, email: isAdmin && isBlock ? "-" : email, car: car, 
-                tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan, date: date, start: start, end: end, type: isAdmin && isBlock ? 'block' : 'Peminjaman'
+                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
+                divisi: isAdmin && isBlock ? "-" : divisi,
+                wa: isAdmin && isBlock ? "-" : empWa,
+                email: isAdmin && isBlock ? "-" : email,
+                car: car, 
+                tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
+                date: date, start: start, end: end,
+                type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
             Peminjamans.push(...newPeminjamans);
-            updateCalendar(); renderPeminjamanList(); checkAvailability(); renderTimeline();
+            updateCalendar(); renderPeminjamanList(); renderTimeline(); checkAvailability(); 
             
             try {
                 await Promise.all(newPeminjamans.map(b => fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...b }) })));
@@ -698,26 +772,35 @@
             } catch(e) {}
 
             alert(isAdmin && isBlock ? `Berhasil diblokir!` : "Peminjaman Berhasil Dicatat! Notifikasi dikirim ke Email.");
-            resetFormState(); tempBookingData = null;
+            resetFormState();
+            tempBookingData = null;
         }
 
-        // ================= ALUR OTP EDIT & DELETE OTOMATIS =================
         function initAction(id, type) {
-            actionId = id; actionType = type; window.closeModal(); 
+            actionId = id; actionType = type;
+            window.closeModal(); 
+            
             if (isAdmin) {
-                if (type === 'delete') { if(confirm("Hapus pesanan ini (Admin)?")) deleteDirect(id, "admin"); } else { executeEditSetup(id, "admin"); }
+                if (type === 'delete') { if(confirm("Hapus pesanan ini (Admin)?")) deleteDirect(id, "admin"); } 
+                else { executeEditSetup(id, "admin"); }
                 return;
             }
-            document.getElementById('otpModal').style.display = 'flex';
-            document.getElementById('otpStep1').style.display = 'block'; document.getElementById('otpStep2').style.display = 'none';
 
-            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'requestOTP', id: id })
+            document.getElementById('otpModal').style.display = 'flex';
+            document.getElementById('otpStep1').style.display = 'block';
+            document.getElementById('otpStep2').style.display = 'none';
+
+            fetch(SCRIPT_URL, {
+                method: 'POST', body: JSON.stringify({ action: 'requestOTP', id: id })
             }).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
-                    document.getElementById('otpStep1').style.display = 'none'; document.getElementById('otpStep2').style.display = 'block';
+                    document.getElementById('otpStep1').style.display = 'none';
+                    document.getElementById('otpStep2').style.display = 'block';
                     document.getElementById('otpText').innerHTML = `Masukkan 6 Digit OTP yang telah dikirim ke email <b>${res.email}</b>.`;
                     document.getElementById('verifyOtpInput').value = "";
-                } else { closeOtpModal(); alert(res.message || "Gagal memuat OTP."); }
+                } else {
+                    closeOtpModal(); alert(res.message || "Gagal memuat OTP.");
+                }
             }).catch(e => { closeOtpModal(); alert("Error koneksi database."); });
         }
 
@@ -726,7 +809,9 @@
         async function submitOtpAction() {
             const otp = document.getElementById('verifyOtpInput').value.trim();
             if(!otp) return alert("OTP wajib diisi!");
-            const btn = document.getElementById('otpConfirmBtn'); const originalText = btn.innerText;
+            
+            const btn = document.getElementById('otpConfirmBtn');
+            const originalText = btn.innerText;
             btn.innerText = "Memproses..."; btn.disabled = true;
 
             try {
@@ -734,14 +819,16 @@
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: actionId, otp: otp }) });
                     const response = await res.json();
                     if(response.status === "success") {
-                        alert("Pesanan berhasil dihapus!"); Peminjamans = Peminjamans.filter(b => b.id != actionId);
-                        updateCalendar(); renderPeminjamanList(); closeOtpModal(); renderTimeline();
+                        alert("Pesanan berhasil dihapus!");
+                        Peminjamans = Peminjamans.filter(b => b.id != actionId);
+                        updateCalendar(); renderPeminjamanList(); renderTimeline(); closeOtpModal();
                     } else { alert(response.message || "OTP Salah!"); }
                 } else if (actionType === 'edit') {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
                     const response = await res.json();
-                    if(response.status === "success") { closeOtpModal(); executeEditSetup(actionId, otp); } 
-                    else { alert(response.message || "OTP Salah!"); }
+                    if(response.status === "success") {
+                        closeOtpModal(); executeEditSetup(actionId, otp);
+                    } else { alert(response.message || "OTP Salah!"); }
                 }
             } catch(e) { alert("Error koneksi."); }
             btn.innerText = originalText; btn.disabled = false;
@@ -756,43 +843,68 @@
         function executeEditSetup(id, otp) {
             const b = Peminjamans.find(x => x.id == id);
             if(!b) return;
-            document.getElementById('empDivisi').value = b.divisi; filterKaryawanByDivisi();
-            setTimeout(() => { document.getElementById('empName').value = b.name; }, 300);
-            document.getElementById('empWa').value = b.wa; document.getElementById('empEmail').value = b.email || "";
-            document.getElementById('carSelect').value = b.car; document.getElementById('tujuanPinjam').value = b.tujuan;
-            document.getElementById('startDate').value = b.date; document.getElementById('startTime').value = b.start; document.getElementById('endTime').value = b.end;
             
-            document.getElementById('endDate').value = ""; document.getElementById('endDate').disabled = true;
-            document.getElementById('endDate').classList.add('bg-gray-200'); document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan)</span>`;
+            document.getElementById('empDivisi').value = b.divisi;
+            filterKaryawanByDivisi();
+            setTimeout(() => { document.getElementById('empName').value = b.name; }, 300);
+            document.getElementById('empWa').value = b.wa;
+            document.getElementById('empEmail').value = b.email || "";
+            document.getElementById('carSelect').value = b.car;
+            document.getElementById('tujuanPinjam').value = b.tujuan;
+            document.getElementById('startDate').value = b.date;
+            document.getElementById('startTime').value = b.start;
+            document.getElementById('endTime').value = b.end;
+
+            document.getElementById('endDate').value = "";
+            document.getElementById('endDate').disabled = true;
+            document.getElementById('endDate').classList.add('bg-gray-200');
+            document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan saat Edit)</span>`;
 
             tempEditingData = { id: id, otp: otp };
-            const submitBtn = document.getElementById('submitBtnMain'); submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
+            
+            const submitBtn = document.getElementById('submitBtnMain');
+            submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
             submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
+            
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         }
 
         function resetFormState() {
             document.getElementById('PeminjamanForm').reset();
-            document.getElementById('endDate').disabled = false; document.getElementById('endDate').classList.remove('bg-gray-200');
+            document.getElementById('endDate').disabled = false;
+            document.getElementById('endDate').classList.remove('bg-gray-200');
             document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span>`;
-            document.getElementById('timeConflictError').classList.add('hidden'); lastAlertedConflict = false;
-            tempEditingData = null; filterKaryawanByDivisi();
-            const submitBtn = document.getElementById('submitBtnMain'); submitBtn.innerHTML = "Konfirmasi Peminjaman";
+            
+            tempEditingData = null;
+            filterKaryawanByDivisi();
+            
+            const submitBtn = document.getElementById('submitBtnMain');
+            submitBtn.innerHTML = "Konfirmasi Peminjaman";
             submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
-            submitBtn.disabled = false; document.getElementById('cancelEditBtn').classList.add('hidden');
+            submitBtn.disabled = false;
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            
+            checkAvailability();
         }
 
         function renderPeminjamanList() {
-            const list = document.getElementById('PeminjamanList'), search = document.getElementById('searchBook').value.toLowerCase();
-            const countSpan = document.getElementById('totalPeminjamans'); list.innerHTML = "";
+            const list = document.getElementById('PeminjamanList');
+            const search = document.getElementById('searchBook').value.toLowerCase();
+            const countSpan = document.getElementById('totalPeminjamans');
+            list.innerHTML = "";
+            
             let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
-            countSpan.innerText = filtered.length; filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
+            countSpan.innerText = filtered.length;
+            filtered.sort((a, b) => new Date(a.date + "T" + (a.start || "00:00")) - new Date(b.date + "T" + (b.start || "00:00")));
+
             if (filtered.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return; }
 
             filtered.forEach(b => {
-                const isBlock = b.type === 'block', cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
+                const isBlock = b.type === 'block';
+                const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
+
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
@@ -803,7 +915,8 @@
                             ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                         </div>
                         <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex gap-4">
-                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span><span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
+                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
+                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
                         </div>
                         <div class="flex justify-end gap-3 mt-3 pt-3 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-90">
                             <button onclick="initAction('${b.id}', 'edit')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2 py-1 bg-blue-50 rounded hover:bg-blue-100 transition flex items-center"><i class="fas fa-edit mr-1"></i> Edit</button>
@@ -818,16 +931,22 @@
             if (!isAdmin) {
                 const pass = prompt("Masukkan Password Admin:");
                 if (pass === "admin123") {
-                    isAdmin = true; document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
-                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600'); document.getElementById('adminControls').classList.remove('hidden');
+                    isAdmin = true;
+                    document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
+                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600');
+                    document.getElementById('adminControls').classList.remove('hidden');
                     alert("Login Admin Berhasil!");
                 } else { alert("Password Salah!"); }
             } else {
-                isAdmin = false; document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
-                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600'); document.getElementById('adminControls').classList.add('hidden');
-                document.getElementById('isBlock').checked = false; document.getElementById('isBlock').dispatchEvent(new Event('change'));
+                isAdmin = false;
+                document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
+                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
+                document.getElementById('adminControls').classList.add('hidden');
+                document.getElementById('isBlock').checked = false;
+                document.getElementById('isBlock').dispatchEvent(new Event('change'));
             }
             renderPeminjamanList();
+            checkAvailability();
         }
 
         function printPDF() { window.print(); }
