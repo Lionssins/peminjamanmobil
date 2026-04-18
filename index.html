@@ -78,7 +78,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                            <input type="tel" id="empWa" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Isi Dendan Sebenarnya">
+                            <input type="tel" id="empWa" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Isi Dengan Sebenarnya">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Email Pemesan <span class="text-red-500">*</span></label>
@@ -112,11 +112,11 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jam Mulai</label>
-                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2 req-field">
+                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2 req-field" onchange="checkAvailability()">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jam Selesai</label>
-                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2 req-field">
+                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2 req-field" onchange="checkAvailability()">
                         </div>
                     </div>
 
@@ -330,27 +330,69 @@
         }
 
         function checkAvailability() {
-            const dateStr = document.getElementById('startDate').value;
-            if (!dateStr) return;
+            const startDateStr = document.getElementById('startDate').value;
+            const endDateStr = document.getElementById('endDate').value || startDateStr; 
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
             const carSelect = document.getElementById('carSelect');
+
+            if (!startDateStr) return;
+
+            const dateArray = [];
+            let loopDate = new Date(startDateStr);
+            let endD = new Date(endDateStr);
+            if (endD < loopDate) endD = loopDate;
+
+            while (loopDate <= endD) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
 
             for(let i = 0; i < carSelect.options.length; i++) {
                 const carVal = carSelect.options[i].value;
                 if(!originalCarTexts[carVal]) continue;
 
-                const isBlocked = Peminjamans.some(b => b.date === dateStr && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
-                
+                const isBlocked = Peminjamans.some(b => 
+                    dateArray.includes(b.date) && 
+                    b.car === carVal && 
+                    b.type === 'block' && 
+                    (!tempEditingData || b.id != tempEditingData.id)
+                );
+
+                let isTimeConflict = false;
+                if (start && end) {
+                    isTimeConflict = Peminjamans.some(b => {
+                        if (!dateArray.includes(b.date)) return false; 
+                        if (b.car !== carVal) return false; 
+                        if (b.type === 'block') return false; 
+                        if (tempEditingData && b.id == tempEditingData.id) return false; 
+                        
+                        return (start < b.end && end > b.start);
+                    });
+                }
+
                 if(isBlocked) {
                     carSelect.options[i].disabled = true;
                     carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
+                } else if (isTimeConflict) {
+                    carSelect.options[i].disabled = true;
+                    carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIPAKAI";
                 } else {
                     carSelect.options[i].disabled = false;
                     carSelect.options[i].text = originalCarTexts[carVal];
                 }
             }
+
             if(carSelect.options[carSelect.selectedIndex] && carSelect.options[carSelect.selectedIndex].disabled) {
                 let availableOption = Array.from(carSelect.options).find(opt => !opt.disabled);
-                if (availableOption) carSelect.value = availableOption.value;
+                if (availableOption) {
+                    carSelect.value = availableOption.value;
+                } else {
+                    carSelect.value = ""; 
+                }
             }
         }
 
