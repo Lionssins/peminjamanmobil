@@ -16,15 +16,6 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
-    <div id="conflictPopup" class="hidden fixed top-5 right-5 bg-red-600 text-white p-4 rounded-lg shadow-2xl z-[9999] flex items-start gap-3 transition-opacity transform duration-300 max-w-sm border-l-4 border-red-900">
-        <i class="fas fa-exclamation-triangle text-2xl mt-1 text-red-200"></i>
-        <div class="flex-1">
-            <h4 class="font-bold text-lg leading-tight">Jadwal Bentrok!</h4>
-            <p class="text-sm mt-1 text-red-100" id="conflictPopupMsg"></p>
-        </div>
-        <button onclick="closeConflictPopup()" class="ml-2 font-bold text-xl hover:text-red-300">&times;</button>
-    </div>
-
     <nav class="bg-blue-800 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -98,7 +89,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
-                            <select id="carSelect" required onchange="checkAvailability()" class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <select id="carSelect" required class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none" onchange="checkAvailability()">
                                 <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
                                 <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
                                 <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
@@ -129,31 +120,6 @@
                         </div>
                     </div>
 
-                    <div id="timelineContainer" class="mt-6 border-t pt-4 border-gray-200">
-                        <div class="flex justify-between items-end mb-2">
-                            <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                <i class="far fa-clock text-blue-500"></i> Ketersediaan Mobil Terpilih
-                            </h4>
-                            <span class="text-[11px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded" id="timelineCarName">-</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-2 italic" id="timelineDate">Pilih Tanggal Mulai dan Mobil terlebih dahulu.</p>
-                        
-                        <div class="relative w-full h-8 bg-green-100 border border-green-300 rounded overflow-hidden shadow-inner cursor-crosshair">
-                            <div class="absolute top-0 bottom-0 left-1/4 border-l border-green-200/50"></div>
-                            <div class="absolute top-0 bottom-0 left-2/4 border-l border-green-200/50"></div>
-                            <div class="absolute top-0 bottom-0 left-3/4 border-l border-green-200/50"></div>
-                            
-                            <div id="timelineBars"></div>
-                        </div>
-                        <div class="flex justify-between text-[10px] font-semibold text-gray-500 mt-1 px-1">
-                            <span>00:00</span>
-                            <span>06:00</span>
-                            <span>12:00</span>
-                            <span>18:00</span>
-                            <span>23:59</span>
-                        </div>
-                    </div>
-
                     <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         <label class="flex items-center gap-2 font-bold cursor-pointer">
                             <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Mobil Spesifik (Admin)
@@ -161,7 +127,7 @@
                         <p class="text-xs text-red-500 mt-1">*Akan memblokir mobil yang dipilih pada dropdown di atas dari peminjam (00:00 - 23:59).</p>
                     </div>
 
-                    <button type="submit" id="submitBtnMain" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95 mt-4">
+                    <button type="submit" id="submitBtnMain" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
                         Konfirmasi Peminjaman
                     </button>
                     <button type="button" id="cancelEditBtn" onclick="resetFormState()" class="hidden w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg shadow transition mt-2">
@@ -169,6 +135,19 @@
                     </button>
                 </form>
             </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-500">
+                <h3 class="text-xl font-bold mb-2 flex items-center gap-2 text-gray-700">
+                    <i class="fas fa-chart-gantt text-green-600"></i> Visualisasi Jadwal Mobil
+                </h3>
+                <p class="text-xs text-gray-500 mb-6 bg-gray-50 p-2 rounded border border-gray-200">
+                    <i class="fas fa-info-circle text-blue-500"></i> Data di bawah menunjukkan jadwal pemakaian mobil pada tanggal: <b id="timelineDateLabel" class="text-blue-700">-</b>.
+                </p>
+                <div id="timelineContainer" class="space-y-2">
+                    <div class="text-center text-gray-400 py-4"><i class='fas fa-spinner fa-spin text-2xl mb-2'></i><br>Memuat Visualisasi...</div>
+                </div>
+            </div>
+
         </div>
 
         <div class="lg:col-span-1">
@@ -239,12 +218,10 @@
     <div id="otpModal" style="display: none; z-index: 9999;" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
             <h3 class="text-lg font-bold mb-2 border-b pb-2">Verifikasi OTP</h3>
-            
             <div id="otpStep1" class="text-center py-8">
                 <i class="fas fa-spinner fa-spin text-blue-600 text-4xl mb-3"></i>
                 <p class="text-sm text-gray-600 font-medium" id="otpTextLoading">Mencari Data & Mengirim OTP...</p>
             </div>
-            
             <div id="otpStep2" class="hidden py-4">
                 <p class="text-sm text-gray-700 mb-4 text-center bg-blue-50 p-3 rounded" id="otpText"></p>
                 <input type="text" id="verifyOtpInput" class="w-full border rounded-lg p-3 mb-4 tracking-[0.5em] text-center text-xl font-bold bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="• • • • • •" maxlength="6">
@@ -254,6 +231,15 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="conflictToast" class="fixed top-24 left-1/2 transform -translate-x-1/2 md:top-5 md:left-auto md:right-5 md:translate-x-0 bg-red-600 text-white px-5 py-4 rounded-xl shadow-2xl transition-all duration-300 translate-y-[-150%] md:translate-y-0 md:translate-x-[120%] opacity-0 z-[10000] flex items-start gap-4 max-w-[90vw] md:max-w-sm border-l-4 border-yellow-300">
+        <i class="fas fa-exclamation-circle text-3xl text-yellow-300 mt-1"></i>
+        <div class="flex-1">
+            <h4 class="font-bold text-base mb-1">Peringatan: Jadwal Bentrok!</h4>
+            <p id="conflictToastMsg" class="text-xs leading-relaxed text-red-50"></p>
+        </div>
+        <button onclick="hideConflictToast()" class="text-white hover:text-yellow-200 font-bold text-xl leading-none ml-2">&times;</button>
     </div>
 
     <script>
@@ -282,15 +268,16 @@
         
         let tempBookingData = null;
         let tempEditingData = null; 
-        let popupTimer = null;
         
         let actionType = '';
         let actionId = '';
+        let toastTimeout;
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
             document.getElementById('monthSelect').value = currentMonth;
-            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            document.getElementById('startDate').value = formatDisplayDate(today); // Set form ke hari ini by default
+            
             fetchPeminjamans();
 
             document.getElementById('isBlock').addEventListener('change', function() {
@@ -300,19 +287,33 @@
                 if(isChecked) {
                     document.getElementById('startTime').value = "00:00";
                     document.getElementById('endTime').value = "23:59";
+                    checkAvailability(); // Picu ulang visual saat admin klik blokir
                 }
-                checkAvailability();
             });
         });
 
+        // ---------------- ALUR NOTIFIKASI TOAST ----------------
+        function showConflictToast(msg) {
+            document.getElementById('conflictToastMsg').innerText = msg;
+            const toast = document.getElementById('conflictToast');
+            toast.classList.remove('translate-y-[-150%]', 'md:translate-x-[120%]', 'opacity-0');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { hideConflictToast(); }, 7000);
+        }
+
+        function hideConflictToast() {
+            const toast = document.getElementById('conflictToast');
+            toast.classList.add('translate-y-[-150%]', 'md:translate-x-[120%]', 'opacity-0');
+        }
+
+        // ---------------- FORMATTING WAKTU ----------------
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
                 if (typeof val === 'string' && val.includes('T')) {
                     let d = new Date(val);
-                    if (!isNaN(d.getTime())) {
-                        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                    }
+                    if (!isNaN(d.getTime())) return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                 }
                 if (typeof val === 'string' && val.includes(':')) {
                     let str = val.toLowerCase().trim();
@@ -322,6 +323,7 @@
                     let parts = str.split(':');
                     let h = parseInt(parts[0], 10) || 0;
                     let m = parseInt(parts[1], 10) || 0;
+                    
                     if (isPM && h < 12) h += 12;
                     if (isAM && h === 12) h = 0;
                     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -334,7 +336,7 @@
             try {
                 if (!val) return "-";
                 let d = new Date(val);
-                if (isNaN(d.getTime())) return String(val).split('T')[0]; 
+                if (isNaN(d.getTime())) return String(val).split('T')[0];
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
@@ -342,19 +344,37 @@
             } catch(e) { return val; }
         }
 
-        function triggerConflictPopup(msg) {
-            const popup = document.getElementById('conflictPopup');
-            document.getElementById('conflictPopupMsg').innerText = msg;
-            popup.classList.remove('hidden');
+        function formatDisplayDateID(dateStr) {
+            try {
+                const d = new Date(dateStr);
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return d.toLocaleDateString('id-ID', options);
+            } catch(e) { return dateStr; }
+        }
+
+        function timeToMins(timeStr) {
+            if (!timeStr || !timeStr.includes(':')) return 0;
+            let parts = timeStr.split(':');
+            return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+        }
+
+        function getDateArray(startDateStr, endDateStr) {
+            const dateArray = [];
+            let loopDate = new Date(startDateStr);
+            let endD = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            if (endD < loopDate) endD = loopDate;
             
-            if (popupTimer) clearTimeout(popupTimer);
-            popupTimer = setTimeout(closeConflictPopup, 6000); // Hilang otomatis setelah 6 detik
+            while (loopDate <= endD) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+            return dateArray;
         }
 
-        function closeConflictPopup() {
-            document.getElementById('conflictPopup').classList.add('hidden');
-        }
-
+        // ---------------- PENGAMBILAN DATA ----------------
         async function fetchPeminjamans() {
             try {
                 const response = await fetch(SCRIPT_URL);
@@ -378,122 +398,133 @@
                 else document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Kosong</option>`;
                 
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
-                updateCalendar(); renderPeminjamanList(); checkAvailability();
+                
+                updateCalendar(); 
+                renderPeminjamanList(); 
+                checkAvailability(); // Memanggil render visual timeline
             } catch (error) {
                 document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
             }
         }
 
-        // FUNGSI RENDER TIMELINE
-        function renderTimeline(dateStr, car) {
-            const container = document.getElementById('timelineBars');
-            container.innerHTML = ""; 
+        // ---------------- RENDER TIMELINE VISUAL ----------------
+        function renderTimeline(dateStr) {
+            const container = document.getElementById('timelineContainer');
+            if(!container) return;
             
-            const nameLabel = document.getElementById('timelineCarName');
-            const dateLabel = document.getElementById('timelineDate');
-
-            if (!dateStr || !car) {
-                nameLabel.innerText = "-";
-                dateLabel.innerText = "Pilih Tanggal Mulai dan Mobil terlebih dahulu.";
-                return;
-            }
-
-            nameLabel.innerText = originalCarTexts[car] || car;
-            const dOpt = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            dateLabel.innerText = "Ketersediaan untuk: " + new Date(dateStr).toLocaleDateString('id-ID', dOpt);
-
-            // Filter peminjaman hanya untuk hari dan mobil tersebut
-            const dayBookings = Peminjamans.filter(b => b.date === dateStr && b.car === car && (!tempEditingData || b.id != tempEditingData.id));
-
-            dayBookings.forEach(b => {
-                const [startH, startM] = b.start.split(':').map(Number);
-                const [endH, endM] = b.end.split(':').map(Number);
-
-                const startPercent = ((startH + (startM/60)) / 24) * 100;
-                let endPercent = ((endH + (endM/60)) / 24) * 100;
+            document.getElementById('timelineDateLabel').innerText = formatDisplayDateID(dateStr);
+            container.innerHTML = "";
+            
+            const cars = Object.keys(carDetails);
+            
+            cars.forEach(carVal => {
+                const dayPeminjamans = Peminjamans.filter(b => b.date === dateStr && b.car === carVal);
                 
-                // Antisipasi jika jam 23:59 agar bar full sampai ujung
-                if (b.end === "23:59") endPercent = 100;
-
-                const widthPercent = endPercent - startPercent;
-                const isBlock = b.type === 'block';
-                const bgColor = isBlock ? 'bg-gray-800' : 'bg-red-500';
-
-                container.innerHTML += `
-                    <div class="absolute top-0 bottom-0 ${bgColor} border-r border-white/50 group transition-all hover:bg-red-600 hover:z-10" style="left: ${startPercent}%; width: ${widthPercent}%;">
-                        <div class="hidden group-hover:block absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1.5 rounded shadow-lg whitespace-nowrap z-20">
-                            <span class="font-bold text-yellow-300">${b.start} - ${b.end}</span><br>
-                            ${isBlock ? 'DIBLOKIR ADMIN' : 'Dipinjam: ' + b.name}
-                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                        </div>
+                let trackHtml = `
+                <div class="mb-5">
+                    <div class="text-xs font-bold text-gray-700 mb-1 flex items-center gap-2">
+                        <i class="fas fa-car-side text-blue-500"></i> ${originalCarTexts[carVal]}
                     </div>
+                    <div class="relative w-full h-10 bg-green-100 border border-green-300 rounded overflow-hidden shadow-inner flex items-center">
+                        <div class="absolute inset-0 flex items-center justify-center text-green-700 font-bold text-xs opacity-50 uppercase tracking-widest">Tersedia</div>
                 `;
+                
+                dayPeminjamans.forEach(b => {
+                    if(b.type === 'block') {
+                        trackHtml += `<div class="absolute top-0 bottom-0 bg-gray-700 border-l border-gray-800 flex items-center justify-center text-[10px] text-white font-bold px-1 cursor-not-allowed z-10" style="left: 0%; width: 100%;" title="DIBLOKIR ADMIN">DIBLOKIR</div>`;
+                    } else {
+                        const startMins = timeToMins(b.start);
+                        const endMins = timeToMins(b.end);
+                        const left = (startMins / 1440) * 100;
+                        let width = ((endMins - startMins) / 1440) * 100;
+                        if(width <= 0) width = 1; 
+                        
+                        trackHtml += `
+                        <div class="absolute top-0 bottom-0 bg-red-500 border-l border-r border-white flex flex-col justify-center items-center text-[10px] leading-tight text-white font-semibold overflow-hidden hover:bg-red-600 cursor-help transition-all shadow-md z-10" style="left: ${left}%; width: ${width}%;" title="Dipakai: ${b.name} (${b.start} - ${b.end})">
+                            <span class="truncate w-full text-center px-1">${b.name.split(' ')[0]}</span>
+                            <span class="hidden md:block scale-[0.8]">${b.start}-${b.end}</span>
+                        </div>`;
+                    }
+                });
+
+                trackHtml += `
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1 font-medium">
+                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+                    </div>
+                </div>`;
+                
+                container.innerHTML += trackHtml;
             });
         }
 
+        // ---------------- FUNGSI PENGECEKAN BENTROK REALTIME ----------------
         function checkAvailability() {
             const startDateStr = document.getElementById('startDate').value;
             const endDateStr = document.getElementById('endDate').value || startDateStr; 
             const start = document.getElementById('startTime').value;
             const end = document.getElementById('endTime').value;
             const carSelect = document.getElementById('carSelect');
-            const selectedCar = carSelect.value;
 
             if (!startDateStr) return;
+            
+            // 1. Gambar Ulang Visualisasi Tiap Ganti Tanggal
+            renderTimeline(startDateStr);
 
-            // Panggil render timeline setiap kali input berubah
-            renderTimeline(startDateStr, selectedCar);
+            const dateArray = getDateArray(startDateStr, endDateStr);
+            let currentCar = carSelect.value;
+            let conflictBooking = null;
 
-            const dateArray = [];
-            let loopDate = new Date(startDateStr);
-            let endD = new Date(endDateStr);
-            if (endD < loopDate) endD = loopDate;
-
-            while (loopDate <= endD) {
-                const yyyy = loopDate.getFullYear();
-                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(loopDate.getDate()).padStart(2, '0');
-                dateArray.push(`${yyyy}-${mm}-${dd}`);
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-
-            // PENGECEKAN REAL-TIME UNTUK POP-UP
-            if (start && end && selectedCar) {
-                if (start >= end) {
-                    triggerConflictPopup("Jam Selesai harus lebih akhir dari Jam Mulai!");
-                    document.getElementById('endTime').value = "";
-                } else {
-                    const explicitConflict = Peminjamans.find(b => {
-                        if (!dateArray.includes(b.date)) return false;
-                        if (b.car !== selectedCar) return false;
-                        if (tempEditingData && b.id == tempEditingData.id) return false;
+            // 2. Cek apakah Input Jam yang dipilih Murni Bentrok
+            if (start && end && start < end) { 
+                for (const date of dateArray) {
+                    conflictBooking = Peminjamans.find(b => {
+                        if (b.date !== date || b.car !== currentCar) return false; 
+                        if (tempEditingData && b.id == tempEditingData.id) return false; 
                         return (start < b.end && end > b.start);
                     });
-
-                    if (explicitConflict) {
-                        // KOSONGKAN INPUT AGAR USER MEMILIH ULANG
-                        document.getElementById('endTime').value = "";
-                        
-                        let msg = explicitConflict.type === 'block' 
-                            ? `Mobil sedang DIBLOKIR ADMIN seharian pada tanggal ini.`
-                            : `Mobil sedang dipakai oleh ${explicitConflict.name} pada pukul ${explicitConflict.start} - ${explicitConflict.end}.`;
-                        
-                        triggerConflictPopup(msg);
-                    }
+                    if (conflictBooking) break; 
                 }
             }
 
-            // PERBARUI WARNA DROPDOWN
+            const submitBtn = document.getElementById('submitBtnMain');
+            
+            // 3. Tampilkan Peringatan atau Normalkan Tombol
+            if (conflictBooking && !isAdmin) {
+                if (conflictBooking.type === 'block') {
+                    showConflictToast(`Maaf, mobil ini sedang Maintenance / diblokir Admin pada tanggal tersebut.`);
+                } else {
+                    showConflictToast(`Gagal! Mobil ini sudah dipinjam oleh ${conflictBooking.name} pada pukul ${conflictBooking.start} - ${conflictBooking.end}. \n\nSilakan pilih jam atau mobil yang lain.`);
+                }
+                // Matikan Tombol
+                submitBtn.disabled = true;
+                submitBtn.classList.replace('bg-blue-700', 'bg-red-600');
+                submitBtn.classList.replace('hover:bg-blue-800', 'hover:bg-red-700');
+                submitBtn.classList.add('cursor-not-allowed', 'opacity-90');
+                submitBtn.innerHTML = "<i class='fas fa-ban'></i> Jadwal Bentrok";
+            } else {
+                hideConflictToast();
+                submitBtn.disabled = false;
+                submitBtn.classList.replace('bg-red-600', 'bg-blue-700');
+                submitBtn.classList.replace('hover:bg-red-700', 'hover:bg-blue-800');
+                submitBtn.classList.remove('cursor-not-allowed', 'opacity-90');
+                if(tempEditingData) {
+                    submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
+                    submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95";
+                } else {
+                    submitBtn.innerHTML = "Konfirmasi Peminjaman";
+                }
+            }
+
+            // 4. Ubah Teks Dropdown Mobil sbg Penanda
             for(let i = 0; i < carSelect.options.length; i++) {
                 const carVal = carSelect.options[i].value;
                 if(!originalCarTexts[carVal]) continue;
 
-                const isBlocked = Peminjamans.some(b => 
-                    dateArray.includes(b.date) && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id)
-                );
-
+                const isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === carVal && b.type === 'block' && (!tempEditingData || b.id != tempEditingData.id));
+                
                 let isTimeConflict = false;
-                if (start && end) {
+                if(start && end && start < end) {
                     isTimeConflict = Peminjamans.some(b => {
                         if (!dateArray.includes(b.date)) return false; 
                         if (b.car !== carVal) return false; 
@@ -504,27 +535,16 @@
                 }
 
                 if(isBlocked) {
-                    carSelect.options[i].disabled = true;
                     carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR";
                 } else if (isTimeConflict) {
-                    carSelect.options[i].disabled = true;
                     carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIPAKAI";
                 } else {
-                    carSelect.options[i].disabled = false;
                     carSelect.options[i].text = originalCarTexts[carVal];
-                }
-            }
-
-            // AUTO GANTI MOBIL JIKA YG TERPILIH DISABLE (BENTROK)
-            if(carSelect.options[carSelect.selectedIndex] && carSelect.options[carSelect.selectedIndex].disabled) {
-                let availableOption = Array.from(carSelect.options).find(opt => !opt.disabled);
-                if (availableOption) {
-                    carSelect.value = availableOption.value;
-                    renderTimeline(startDateStr, availableOption.value); // render ulang timeline utk mobil baru
                 }
             }
         }
 
+        // ---------------- ALUR LAINNYA ----------------
         function populateDropdown(elementId, dataArray, defaultText) {
             const select = document.getElementById(elementId);
             if(!select) return;
@@ -657,12 +677,9 @@
             const isBlock = !document.getElementById('adminControls').classList.contains('hidden') ? document.getElementById('isBlock').checked : false;
 
             if (isBlock) { start = "00:00"; end = "23:59"; }
-            if (start >= end) { 
-                triggerConflictPopup("Jam Selesai harus lebih akhir dari Jam Mulai!"); 
-                return; 
-            }
+            if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
-            // ===== PENANGANAN SUBMIT EDIT =====
+            // Penanganan Submit Edit
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
@@ -684,67 +701,26 @@
                 return;
             }
 
-            const startDate = new Date(startDateStr);
-            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
-            const dateArray = [];
+            const dateArray = getDateArray(startDateStr, endDateStr);
 
-            if (endDate < startDate) { triggerConflictPopup("Tanggal Akhir tidak valid!"); return; }
-
-            let loopDate = new Date(startDate);
-            while (loopDate <= endDate) {
-                const yyyy = loopDate.getFullYear();
-                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(loopDate.getDate()).padStart(2, '0');
-                dateArray.push(`${yyyy}-${mm}-${dd}`);
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-
-            // SINKRONISASI REAL-TIME MENCEGAH BENTROK SAAT SUBMIT BERSAMAAN
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memverifikasi Jadwal...";
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(SCRIPT_URL);
-                const textData = await response.text();
-                const parsedData = JSON.parse(textData);
-                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
-
-                Peminjamans = rawPeminjamans.map(b => {
-                    let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
-                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
-                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
-                });
-                updateCalendar(); renderPeminjamanList();
-            } catch (error) { console.error("Sinkronisasi gagal, gunakan data lokal."); }
-
+            // Double check sebagai lapisan keamanan terakhir
             let hasConflict = false;
-            let conflictDates = [];
-
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => {
                     if (b.date !== date || b.car !== car) return false;
                     if (tempEditingData && b.id == tempEditingData.id) return false;
                     return (start < b.end && end > b.start);
                 });
-
-                if (conflict && !isAdmin) { 
-                    hasConflict = true; 
-                    conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); 
-                }
+                if (conflict && !isAdmin) hasConflict = true; 
             }
 
             if (hasConflict) { 
-                triggerConflictPopup(`Mobil baru saja dipesan oleh orang lain pada:\n${conflictDates.join('\n')}\nSilakan pilih jam/mobil lain.`); 
-                btn.innerHTML = originalBtnText; 
-                btn.disabled = false;
-                checkAvailability(); 
+                checkAvailability(); // Picu ulang visual peringatan
                 return; 
             }
 
-            btn.innerHTML = originalBtnText;
-            btn.disabled = false;
+            // Lanjut ke persetujuan
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan };
-
             if(isAdmin && isBlock) { executePeminjaman(); } 
             else { document.getElementById('agreementModal').style.display = 'flex'; }
         }
@@ -783,7 +759,6 @@
             tempBookingData = null;
         }
 
-        // ================= ALUR OTP EDIT & DELETE OTOMATIS =================
         function initAction(id, type) {
             actionId = id; actionType = type;
             window.closeModal(); 
@@ -829,7 +804,7 @@
                     if(response.status === "success") {
                         alert("Pesanan berhasil dihapus!");
                         Peminjamans = Peminjamans.filter(b => b.id != actionId);
-                        updateCalendar(); renderPeminjamanList(); closeOtpModal();
+                        updateCalendar(); renderPeminjamanList(); checkAvailability(); closeOtpModal();
                     } else { alert(response.message || "OTP Salah!"); }
                 } else if (actionType === 'edit') {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyOTP', id: actionId, otp: otp }) });
@@ -844,7 +819,7 @@
 
         async function deleteDirect(id, otp) {
             Peminjamans = Peminjamans.filter(b => b.id != id);
-            updateCalendar(); renderPeminjamanList();
+            updateCalendar(); renderPeminjamanList(); checkAvailability();
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id, otp: otp }) });
         }
 
@@ -869,11 +844,7 @@
             document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-red-500">(Dinonaktifkan saat Edit)</span>`;
 
             tempEditingData = { id: id, otp: otp };
-            
-            const submitBtn = document.getElementById('submitBtnMain');
-            submitBtn.innerHTML = "<i class='fas fa-save'></i> Simpan Perubahan";
-            submitBtn.className = "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95 mt-4";
-            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            checkAvailability(); // Update visual agar blok sendiri diabaikan
             
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         }
@@ -883,15 +854,11 @@
             document.getElementById('endDate').disabled = false;
             document.getElementById('endDate').classList.remove('bg-gray-200');
             document.getElementById('lblEndDate').innerHTML = `Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span>`;
+            document.getElementById('startDate').value = formatDisplayDate(today);
             
             tempEditingData = null;
             filterKaryawanByDivisi();
-            checkAvailability(); // Refresh timeline visual
-            
-            const submitBtn = document.getElementById('submitBtnMain');
-            submitBtn.innerHTML = "Konfirmasi Peminjaman";
-            submitBtn.className = "w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95 mt-4";
-            submitBtn.disabled = false;
+            checkAvailability(); // Pulihkan tombol & visual
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
@@ -953,7 +920,6 @@
                 document.getElementById('isBlock').dispatchEvent(new Event('change'));
             }
             renderPeminjamanList();
-            checkAvailability(); // Refresh visualisasi dengan kacamata admin
         }
 
         function printPDF() { window.print(); }
