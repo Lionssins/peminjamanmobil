@@ -223,7 +223,7 @@
     </div>
 
     <script>
-        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA YANG BARU
+        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-ALSIGlcHJO3Spr5lfgnEhgepSiNicsxGdYLvth0PwslBsu401a8oRJbQbL2g4JS/exec'; 
 
         const carDetails = {
@@ -247,7 +247,7 @@
         let selectedDateForPeminjaman = "";
         
         let tempBookingData = null;
-        let tempEditingData = null; // Menyimpan ID dan OTP jika sedang mode Edit
+        let tempEditingData = null; 
         
         let actionType = '';
         let actionId = '';
@@ -269,18 +269,7 @@
             });
         });
 
-        function formatDisplayDate(val) {
-            try {
-                if (!val) return "-";
-                let d = new Date(val);
-                if (isNaN(d.getTime())) return String(val).split('T')[0];
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            } catch(e) { return val; }
-        }
-
+        // FIX 1: Perbaikan pembacaan format waktu dari Google Sheet agar konsisten "HH:mm" (zero-padding)
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
@@ -293,10 +282,22 @@
                     }
                 }
                 if (typeof val === 'string' && val.includes(':')) {
-                    const parts = val.split(':');
-                    return `${parts[0]}:${parts[1]}`;
+                    let parts = val.split(':');
+                    return `${String(parts[0]).trim().padStart(2, '0')}:${String(parts[1]).trim().padStart(2, '0')}`;
                 }
                 return val;
+            } catch(e) { return val; }
+        }
+
+        function formatDisplayDate(val) {
+            try {
+                if (!val) return "-";
+                let d = new Date(val);
+                if (isNaN(d.getTime())) return String(val).split('T')[0];
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             } catch(e) { return val; }
         }
 
@@ -529,7 +530,47 @@
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
-            // ===== PENANGANAN SUBMIT EDIT =====
+            // FIX 2: Pindahkan Pengecekan Bentrok ke Paling Atas (Sebelum Request API Edit dieksekusi)
+            const startDate = new Date(startDateStr);
+            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const dateArray = [];
+
+            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
+
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            let hasConflict = false;
+            let conflictDates = [];
+
+            for (const date of dateArray) {
+                const conflict = Peminjamans.find(b => {
+                    if (b.date !== date || b.car !== car) return false;
+                    // Abaikan pengecekan jika dia mengedit data miliknya sendiri (mencegah false alarm)
+                    if (tempEditingData && b.id == tempEditingData.id) return false;
+                    
+                    return (start < b.end && end > b.start);
+                });
+
+                if (conflict && !isAdmin) { 
+                    hasConflict = true; 
+                    conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); 
+                }
+            }
+
+            if (hasConflict) { 
+                alert(`TIDAK BISA DILANJUTKAN! JADWAL BENTROK:\n\nMobil ini sudah dipesan pada:\n${conflictDates.join('\n')}\n\nSilakan pilih jam lain atau mobil lain.`); 
+                return; 
+            }
+            // --- AKHIR PENGECEKAN BENTROK ---
+
+            // PENANGANAN SUBMIT EDIT (Sudah Aman dari Bentrok)
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
@@ -550,32 +591,6 @@
                 } catch(e) { alert("Error koneksi."); btn.innerHTML = "Simpan Perubahan"; btn.disabled = false; }
                 return;
             }
-            // ===================================
-
-            const startDate = new Date(startDateStr);
-            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
-            const dateArray = [];
-
-            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
-
-            let loopDate = new Date(startDate);
-            while (loopDate <= endDate) {
-                const yyyy = loopDate.getFullYear();
-                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(loopDate.getDate()).padStart(2, '0');
-                dateArray.push(`${yyyy}-${mm}-${dd}`);
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-
-            let hasConflict = false;
-            let conflictDates = [];
-
-            for (const date of dateArray) {
-                const conflict = Peminjamans.find(b => b.date === date && b.car === car && (start < b.end && end > b.start));
-                if (conflict && !isAdmin) { hasConflict = true; conflictDates.push(`${date} (${conflict.start} - ${conflict.end})`); }
-            }
-
-            if (hasConflict) { alert(`Jadwal bentrok:\n${conflictDates.join('\n')}`); return; }
 
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan };
 
@@ -697,7 +712,7 @@
             document.getElementById('startTime').value = b.start;
             document.getElementById('endTime').value = b.end;
 
-            // Kunci fitur multi-hari selama edit (demi keamanan record ID tunggal)
+            // Kunci fitur multi-hari selama edit
             document.getElementById('endDate').value = "";
             document.getElementById('endDate').disabled = true;
             document.getElementById('endDate').classList.add('bg-gray-200');
@@ -728,7 +743,6 @@
             submitBtn.disabled = false;
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
-        // ===============================================================
 
         function renderPeminjamanList() {
             const list = document.getElementById('PeminjamanList');
