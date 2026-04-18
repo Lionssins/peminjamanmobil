@@ -12,7 +12,6 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -156,7 +155,7 @@
                 </div>
                 
                 <div id="timelineContainer" class="space-y-6 overflow-x-auto pb-2">
-                    </div>
+                </div>
                 
                 <div class="flex flex-wrap gap-3 md:gap-6 text-[10px] md:text-sm mt-6 justify-center bg-gray-50 py-3 px-2 rounded-lg border border-gray-200">
                     <span class="flex items-center gap-1.5 font-bold text-green-700"><div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-sm"></div> Kosong / Tersedia</span>
@@ -199,7 +198,7 @@
     <div id="agreementModal" style="display: none; z-index: 9999;" class="fixed inset-0 bg-black bg-opacity-70 items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md rounded-t-xl">
-                <h3 class="font-bold text-base md:text-lg flex items-center gap-2"><i class="fas fa-file-signature"></i> Persetujuan Syarat & Ketentuan</h3>
+                <h3 class="font-bold text-base md:text-lg flex items-center gap-2"><i class="fas fa-file-signature"></i> Persetujuan Peminjaman</h3>
                 <button onclick="window.closeAgreementModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none outline-none">&times;</button>
             </div>
             
@@ -216,12 +215,11 @@
                     <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan BBM dikirim by WA.</li>
                 </ol>
                 <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
-                    <i class="fas fa-envelope-open-text mr-2"></i> Bukti persetujuan beserta detail jadwal peminjaman akan otomatis dikirimkan ke Email Anda sebagai dokumen sah.
+                    <i class="fas fa-envelope-open-text mr-2"></i> Surat Persetujuan resmi berformat <b>PDF</b> lengkap dengan barcode tanda tangan digital akan dikirimkan ke <b id="displayTargetEmail" class="text-black border-b border-gray-400">email peminjam</b> setelah menekan setuju.
                 </div>
             </div>
 
             <div class="p-4 md:p-6 bg-gray-100 flex flex-col items-center gap-4 rounded-b-xl border-t border-gray-300">
-                
                 <label class="flex items-center gap-3 cursor-pointer w-full text-sm md:text-base font-bold text-gray-700 hover:text-blue-700 transition">
                     <input type="checkbox" id="agreeCheckbox" class="w-6 h-6 text-blue-600 rounded cursor-pointer" onchange="toggleAgreeButton()">
                     <span>Saya telah membaca dan menyetujui semua Syarat & Ketentuan di atas.</span>
@@ -229,9 +227,8 @@
 
                 <div class="flex gap-3 w-full mt-2">
                     <button onclick="window.closeAgreementModal()" class="w-1/3 md:w-auto flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-3 rounded-lg shadow transition">Batal</button>
-                    
                     <button id="btnAgreeContinue" onclick="executePeminjaman()" disabled class="w-2/3 md:w-auto flex-[2] bg-gray-400 text-white font-bold px-6 py-3 rounded-lg shadow transition flex items-center justify-center gap-2 cursor-not-allowed">
-                        Kirim Peminjaman <i class="fas fa-paper-plane"></i>
+                        Setuju & Kirim <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
@@ -259,7 +256,7 @@
     </div>
 
     <script>
-        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA
+        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA YANG TERBARU
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-ALSIGlcHJO3Spr5lfgnEhgepSiNicsxGdYLvth0PwslBsu401a8oRJbQbL2g4JS/exec'; 
 
         const carDetails = {
@@ -781,6 +778,7 @@
             if(isAdmin && isBlock) { 
                 executePeminjaman(); 
             } else { 
+                document.getElementById('displayTargetEmail').innerText = email;
                 document.getElementById('agreeCheckbox').checked = false;
                 window.toggleAgreeButton();
                 document.getElementById('agreementModal').style.display = 'flex'; 
