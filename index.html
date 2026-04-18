@@ -213,7 +213,7 @@
                     <li>Mengisi kembali BBM yang terpakai sesuai dengan aturan (minimal seperti semula sebelum memakai).</li>
                     <li>Mengembalikan mobil sesuai dengan tanggal dan waktu yang sudah tertera pada form.</li>
                     <li>Apabila terjadi keterlambatan pengembalian mobil, permintaan peminjaman mobil ditangguhkan selama 30 hari.</li>
-                    <li>Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : GA).</li>
+                    <li>Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : Lita).</li>
                     <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan BBM dikirim by WA.</li>
                 </ol>
                 <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
@@ -258,7 +258,7 @@
     </div>
 
     <script>
-        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA YANG TERBARU
+        // GANTI DENGAN URL DEPLOY APPS SCRIPT ANDA YANG TERBARU JIKA BERUBAH
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxpirp7uyvqBD1u1zkZMJ9L8UYwfXSOJojeJBBH64oo5_1lfMRUy8ywHSxD0Ylr73u/exec'; 
 
         const carDetails = {
@@ -781,7 +781,7 @@
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan, dateText };
 
             if(isAdmin && isBlock) { 
-                executePeminjaman(); 
+                generateAndSubmit(); // FIX TYPO: Memanggil fungsi yang benar
             } else { 
                 document.getElementById('displayTargetEmail').innerText = email;
                 document.getElementById('agreeCheckbox').checked = false;
@@ -791,11 +791,12 @@
         }
 
         // ==================================================
-        // FUNGSI KIRIM: BUAT QR -> JADIKAN BASE64 -> KIRIM
+        // FUNGSI KIRIM: BATCH ADD (PENINGKATAN KECEPATAN)
         // ==================================================
         async function generateAndSubmit() {
             if (!tempBookingData) return;
-            const btn = document.getElementById('btnAgreeContinue');
+            const btn = document.getElementById('btnAgreeContinue') || document.getElementById('submitBtnMain');
+            const originalBtnHtml = btn.innerHTML;
             btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses Dokumen...";
             btn.disabled = true;
 
@@ -804,7 +805,6 @@
             let qrBase64 = "";
             
             if (!isBlock) {
-                // Buat QR Code rahasia di dalam memori Browser
                 const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 
                 const tempDiv = document.createElement('div');
@@ -815,15 +815,14 @@
                     width: 150, height: 150, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
                 });
 
-                // Beri waktu sekejap agar Canvas digambar
                 await new Promise(r => setTimeout(r, 400));
 
                 const qrCanvas = tempDiv.querySelector('canvas');
                 if(qrCanvas) {
-                    qrBase64 = qrCanvas.toDataURL('image/png'); // Ekstrak Base64 murni dari HP peminjam
+                    qrBase64 = qrCanvas.toDataURL('image/png');
                 }
                 
-                document.body.removeChild(tempDiv); // Bersihkan sisa
+                document.body.removeChild(tempDiv); 
             }
 
             const newPeminjamans = dateArray.map((date, index) => ({
@@ -836,8 +835,8 @@
                 tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
                 date: date, start: start, end: end,
                 type: isAdmin && isBlock ? 'block' : 'Peminjaman',
-                qrBase64: index === 0 ? qrBase64 : "", // Kirim Base64 ke Backend
-                dateText: index === 0 ? dateText : "", // Info teks tanggal untuk PDF
+                qrBase64: index === 0 ? qrBase64 : "", 
+                dateText: index === 0 ? dateText : "", 
                 sendEmail: index === 0 ? true : false
             }));
 
@@ -845,17 +844,20 @@
             document.getElementById('agreementModal').style.display = 'none';
             updateCalendar(); renderTimeline(); checkAvailability(); 
             
+            // IMPLEMENTASI BATCH (1 KALI REQUEST UNTUK BERAPA PUN HARINYA)
             try {
-                await Promise.all(newPeminjamans.map(b => fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    redirect: 'follow', 
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    redirect: 'follow',
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: 'add', ...b }) 
-                })));
-                setTimeout(() => { fetchPeminjamans(); }, 3000);
-            } catch(e) {}
+                    body: JSON.stringify({ action: 'batchAdd', data: newPeminjamans })
+                });
+                setTimeout(() => { fetchPeminjamans(); }, 1500);
+            } catch(e) {
+                alert("Gagal menghubungi server.");
+            }
 
-            alert("Peminjaman Berhasil Dicatat!\nSurat Persetujuan PDF beserta Tanda Tangan Digital telah dikirim ke Email Anda.");
+            alert("Proses Berhasil Dicatat!");
             resetFormState();
             tempBookingData = null;
         }
