@@ -157,6 +157,37 @@
                 </div>
             </div>
 
+            <div class="bg-yellow-50 p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
+                <h3 class="text-lg font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-sticky-note"></i> Catatan Peminjaman
+                </h3>
+                <div class="text-sm text-gray-700 space-y-2 leading-relaxed">
+                    <p>1. Harap selalu menjaga kebersihan mobil selama dan setelah pemakaian.</p>
+                    <p>2. Kembalikan kunci kepada <b>PIC (Lita)</b> maksimal 15 menit setelah waktu peminjaman berakhir.</p>
+                    <p>3. Jika mendadak batal berangkat, mohon segera hapus pesanan agar mobil dapat digunakan oleh divisi lain.</p>
+                    <p>4. Segala bentuk denda tilang eletronik (ETLE) menjadi tanggung jawab penuh peminjam.</p>
+                    </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-teal-500">
+                <h3 class="text-lg font-bold text-teal-800 mb-1 flex items-center gap-2">
+                    <i class="fas fa-comment-dots"></i> Kotak Masukan & Saran
+                </h3>
+                <p class="text-xs text-gray-500 mb-4">Punya ide fitur baru, usulan perbaikan, atau laporan kendala? Kirimkan pesan langsung ke Admin/Developer.</p>
+                <form id="feedbackForm" onsubmit="submitFeedback(event)" class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" id="fbName" placeholder="Nama Anda (Opsional)" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50">
+                        <input type="email" id="fbEmail" placeholder="Email Anda (Opsional untuk balasan)" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50">
+                    </div>
+                    <textarea id="fbMessage" required placeholder="Tulis masukan, ide, atau laporan bug Anda di sini..." rows="3" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-gray-50"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit" id="btnFeedback" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm text-sm transition flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i> Kirim Masukan
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
 
         <div class="lg:col-span-1">
@@ -290,7 +321,7 @@
                 if(isChecked) {
                     document.getElementById('startTime').value = "00:00";
                     document.getElementById('endTime').value = "23:59";
-                    checkAvailability(); // Re-check when blocked
+                    checkAvailability(); 
                 }
             });
         });
@@ -365,13 +396,13 @@
                 
                 updateCalendar(); 
                 renderPeminjamanList(); 
-                renderTimeline(); // Render UI Timeline
+                renderTimeline(); 
             } catch (error) {
                 document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data.</div>`;
             }
         }
 
-        // FUNGSI BARU: RENDER VISUALISASI TIMELINE HARIAN
+        // RENDER VISUALISASI TIMELINE HARIAN
         function renderTimeline() {
             let dateStr = document.getElementById('timelineDate').value;
             if(!dateStr) return;
@@ -402,7 +433,6 @@
                         let sMins = timeToMins(b.start);
                         let eMins = timeToMins(b.end);
                         
-                        // Validasi agar balok tidak error jika waktu salah
                         if (eMins <= sMins) return; 
 
                         let leftPct = (sMins / 1440) * 100;
@@ -429,7 +459,7 @@
             });
         }
 
-        // FUNGSI CEK BENTROK REAL-TIME & FIX BUG TANGGAL INFINITE
+        // FUNGSI CEK BENTROK REAL-TIME TERMASUK MENGUNCI DROPDOWN OTOMATIS
         function checkAvailability() {
             const startDateElem = document.getElementById('startDate');
             const endDateElem = document.getElementById('endDate');
@@ -441,32 +471,27 @@
             let startDateStr = startDateElem.value;
             let endDateStr = endDateElem.value;
 
-            // ==========================================
-            // FIX BUG 1: MENCEGAH INFINITE LOOP WEB FREEZE
-            // Jika tanggal akhir ternyata lebih awal (lebih kecil) dari tanggal mulai
-            // ==========================================
+            // MENCEGAH BUG TANGGAL INFINITE LOOP
             if (startDateStr && endDateStr) {
                 if (new Date(endDateStr) < new Date(startDateStr)) {
-                    alert("⚠️ KESALAHAN INPUT: Tanggal Akhir tidak boleh lebih awal dari Tanggal Mulai!\n\nSistem otomatis menyamakan tanggal akhir dengan tanggal mulai.");
                     endDateElem.value = startDateStr;
                     endDateStr = startDateStr;
                 }
             }
-            if (!endDateStr) endDateStr = startDateStr; // Fallback aman
+            if (!endDateStr) endDateStr = startDateStr;
 
-            // Sinkronkan visualisasi timeline otomatis dengan tanggal yang dipilih user
+            // Sinkronkan UI Visualisasi dengan tanggal yang diklik
             if (startDateStr) {
                 document.getElementById('timelineDate').value = startDateStr;
                 renderTimeline();
             }
 
+            if (!startDateStr) return; 
+
             const start = startTimeElem.value;
             const end = endTimeElem.value;
-            const carVal = carSelectElem.value;
+            const isBlockAdmin = isAdmin && document.getElementById('isBlock').checked;
 
-            if (!startDateStr || !start || !end || !carVal) return;
-
-            // Generate rentang multi-hari dengan aman (sudah dicegah bug-nya di atas)
             const dateArray = [];
             let loopDate = new Date(startDateStr);
             let endD = new Date(endDateStr);
@@ -478,55 +503,108 @@
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            // ==========================================
-            // FIX BUG 2: REAL-TIME POPUP BENTROK
-            // ==========================================
-            let hasConflict = false;
-            let conflictMsg = "";
+            // LOOP SEMUA MOBIL UNTUK MENDISABLE JIKA DIBLOKIR/DIPAKAI
+            for(let i = 0; i < carSelectElem.options.length; i++) {
+                const optCarId = carSelectElem.options[i].value;
+                if(!originalCarTexts[optCarId]) continue;
 
-            const isBlockAdmin = isAdmin && document.getElementById('isBlock').checked;
+                // Cek blokir Admin harian (hanya butuh parameter tanggal)
+                let isBlocked = Peminjamans.some(b => dateArray.includes(b.date) && b.car === optCarId && b.type === 'block');
+                
+                // Cek bentrok jam peminjam lain (butuh parameter jam)
+                let isTimeConflict = false;
+                if (start && end) {
+                    isTimeConflict = Peminjamans.some(b => {
+                        if (!dateArray.includes(b.date) || b.car !== optCarId) return false;
+                        if (tempEditingData && b.id == tempEditingData.id) return false; 
+                        if (b.type === 'block') return false; 
+                        return (start < b.end && end > b.start); 
+                    });
+                }
 
-            for (const date of dateArray) {
-                const conflict = Peminjamans.find(b => {
-                    if (b.date !== date || b.car !== carVal) return false;
-                    if (tempEditingData && b.id == tempEditingData.id) return false; // Abaikan data yg sedang di-edit
-                    if (b.type === 'block') return true; // Blokir menabrak semua jam
-                    return (start < b.end && end > b.start); // Logika tumpang tindih waktu
-                });
-
-                // Jika terdeteksi bentrok dan yang mengisi bukan admin yang sedang melakukan Override/Blokir
-                if (conflict && !isBlockAdmin) {
-                    hasConflict = true;
-                    if (conflict.type === 'block') {
-                        conflictMsg = `Mobil sedang DIBLOKIR oleh Admin pada tanggal ${date}.`;
-                    } else {
-                        conflictMsg = `JADWAL BENTROK!\n\nMobil ini sudah dipesan oleh:\n👤 Nama: ${conflict.name}\n🕒 Jam: ${conflict.start} - ${conflict.end} WIB\n📅 Tanggal: ${date}\n\nSilakan pilih jam lain atau gunakan mobil yang berbeda.`;
-                    }
-                    break; 
+                // Matikan Opsi di Dropdown
+                if (isBlocked && !isBlockAdmin) {
+                    carSelectElem.options[i].disabled = true;
+                    carSelectElem.options[i].text = originalCarTexts[optCarId] + " - ❌ DIBLOKIR";
+                } else if (isTimeConflict && !isBlockAdmin) {
+                    carSelectElem.options[i].disabled = true;
+                    carSelectElem.options[i].text = originalCarTexts[optCarId] + " - ❌ DIPAKAI";
+                } else {
+                    carSelectElem.options[i].disabled = false;
+                    carSelectElem.options[i].text = originalCarTexts[optCarId];
                 }
             }
 
-            if (hasConflict) {
-                // MUNCULKAN NOTIFIKASI SEKETIKA
-                alert("🚫 " + conflictMsg);
+            // Jika mobil yang SEDANG ter-select ikut ter-disable, otomatis pindah ke mobil yang tersedia
+            if(carSelectElem.options[carSelectElem.selectedIndex] && carSelectElem.options[carSelectElem.selectedIndex].disabled) {
+                let availableOption = Array.from(carSelectElem.options).find(opt => !opt.disabled);
+                carSelectElem.value = availableOption ? availableOption.value : "";
+            }
+
+            // MUNCULKAN POP UP JIKA MASIH MEMAKSA
+            let hasSelectedConflict = false;
+            let conflictMsg = "";
+            let selectedCarVal = carSelectElem.value;
+
+            if (selectedCarVal && start && end) {
+                 const conflict = Peminjamans.find(b => {
+                    if (!dateArray.includes(b.date) || b.car !== selectedCarVal) return false;
+                    if (tempEditingData && b.id == tempEditingData.id) return false;
+                    if (b.type === 'block') return true;
+                    return (start < b.end && end > b.start);
+                });
                 
-                // Reset isian jam agar user dipaksa mengubahnya
+                if (conflict && !isBlockAdmin) {
+                     hasSelectedConflict = true;
+                     conflictMsg = conflict.type === 'block' ? `Mobil tersebut sedang DIBLOKIR oleh Admin.` : `JADWAL BENTROK!\n\nMobil ini sudah dipesan oleh ${conflict.name} pada ${conflict.start} - ${conflict.end} WIB.`;
+                }
+            }
+
+            if (hasSelectedConflict) {
+                alert("🚫 " + conflictMsg);
                 startTimeElem.value = "";
                 endTimeElem.value = "";
                 
-                // Matikan tombol submit
                 btnSubmit.disabled = true;
                 btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
                 btnSubmit.innerHTML = "<i class='fas fa-ban'></i> Jadwal Bentrok";
             } else {
-                // Jika aman, hidupkan kembali tombol
                 btnSubmit.disabled = false;
                 btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnSubmit.innerHTML = tempEditingData ? "<i class='fas fa-save'></i> Simpan Perubahan" : "Konfirmasi Peminjaman";
             }
         }
 
-        // FUNGSI LAINNYA (TIDAK ADA PERUBAHAN LOGIKA DARI VERSI SEBELUMNYA)
+        // FUNGSI PENGIRIMAN FEEDBACK
+        async function submitFeedback(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnFeedback');
+            const originalBtnText = btn.innerHTML;
+            
+            const fbName = document.getElementById('fbName').value || "Anonim";
+            const fbEmail = document.getElementById('fbEmail').value || "-";
+            const fbMessage = document.getElementById('fbMessage').value;
+
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Mengirim...";
+            btn.disabled = true;
+
+            try {
+                // Menembak ke Google Apps Script yang sama dengan action khusus 'feedback'
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'feedback', name: fbName, email: fbEmail, message: fbMessage })
+                });
+                
+                alert("✅ Terima kasih! Masukan Anda telah dikirim ke Admin/Developer.");
+                document.getElementById('feedbackForm').reset();
+            } catch(error) {
+                alert("❌ Gagal mengirim masukan. Pastikan koneksi internet Anda stabil.");
+            }
+            
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }
+
         function populateDropdown(elementId, dataArray, defaultText) {
             const select = document.getElementById(elementId);
             if(!select) return;
@@ -636,7 +714,7 @@
         window.goToPeminjamanForm = function() {
             window.closeModal();
             document.getElementById('startDate').value = selectedDateForPeminjaman;
-            checkAvailability(); // Memanggil trigger visualisasi
+            checkAvailability(); 
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         };
 
