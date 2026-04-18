@@ -269,31 +269,46 @@
             });
         });
 
-        // FIX 1: Perbaikan pembacaan format waktu dari Google Sheet agar konsisten "HH:mm" (zero-padding)
+        // FIX 1: PENGHANCUR BUG FORMAT WAKTU (Membaca format kotor dari Sheet dan menjadikannya 24 Jam murni)
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
+                // Jika berbentuk ISO Date (cth: 2024-04-18T07:00:00.000Z)
                 if (typeof val === 'string' && val.includes('T')) {
                     let d = new Date(val);
                     if (!isNaN(d.getTime())) {
-                        let hrs = String(d.getHours()).padStart(2, '0');
-                        let mins = String(d.getMinutes()).padStart(2, '0');
-                        return `${hrs}:${mins}`;
+                        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                     }
                 }
+                // Jika berbentuk teks jam (cth: "8:00", "08:00:00", "8:00 AM", "02:30 PM")
                 if (typeof val === 'string' && val.includes(':')) {
-                    let parts = val.split(':');
-                    return `${String(parts[0]).trim().padStart(2, '0')}:${String(parts[1]).trim().padStart(2, '0')}`;
+                    let str = val.toLowerCase().trim();
+                    let isPM = str.includes('pm');
+                    let isAM = str.includes('am');
+                    
+                    // Bersihkan huruf dari angka
+                    str = str.replace(/[a-z]/gi, '').trim();
+                    let parts = str.split(':');
+                    
+                    let h = parseInt(parts[0], 10) || 0;
+                    let m = parseInt(parts[1], 10) || 0;
+                    
+                    // Konversi ke 24 jam yang akurat
+                    if (isPM && h < 12) h += 12;
+                    if (isAM && h === 12) h = 0;
+                    
+                    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                 }
-                return val;
+                return String(val);
             } catch(e) { return val; }
         }
 
+        // FIX 2: PARSER TANGGAL STRICT
         function formatDisplayDate(val) {
             try {
                 if (!val) return "-";
                 let d = new Date(val);
-                if (isNaN(d.getTime())) return String(val).split('T')[0];
+                if (isNaN(d.getTime())) return String(val).split('T')[0]; // Fallback kotor
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
@@ -371,6 +386,7 @@
                         if (b.type === 'block') return false; 
                         if (tempEditingData && b.id == tempEditingData.id) return false; 
                         
+                        // Perbandingan String yang aman karena format formatDisplayTime sudah seragam "HH:mm"
                         return (start < b.end && end > b.start);
                     });
                 }
@@ -510,9 +526,11 @@
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         };
 
+        // FIX 3: PRE-FLIGHT CHECK (Cek data paling terbaru dari server SEBELUM disetujui)
         async function handlePeminjaman(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtnMain');
+            const originalBtnText = btn.innerHTML;
 
             const name = document.getElementById('empName').value || "-";
             const divisi = document.getElementById('empDivisi').value || "-";
@@ -530,47 +548,7 @@
             if (isBlock) { start = "00:00"; end = "23:59"; }
             if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); return; }
 
-            // FIX 2: Pindahkan Pengecekan Bentrok ke Paling Atas (Sebelum Request API Edit dieksekusi)
-            const startDate = new Date(startDateStr);
-            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
-            const dateArray = [];
-
-            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
-
-            let loopDate = new Date(startDate);
-            while (loopDate <= endDate) {
-                const yyyy = loopDate.getFullYear();
-                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(loopDate.getDate()).padStart(2, '0');
-                dateArray.push(`${yyyy}-${mm}-${dd}`);
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-
-            let hasConflict = false;
-            let conflictDates = [];
-
-            for (const date of dateArray) {
-                const conflict = Peminjamans.find(b => {
-                    if (b.date !== date || b.car !== car) return false;
-                    // Abaikan pengecekan jika dia mengedit data miliknya sendiri (mencegah false alarm)
-                    if (tempEditingData && b.id == tempEditingData.id) return false;
-                    
-                    return (start < b.end && end > b.start);
-                });
-
-                if (conflict && !isAdmin) { 
-                    hasConflict = true; 
-                    conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); 
-                }
-            }
-
-            if (hasConflict) { 
-                alert(`TIDAK BISA DILANJUTKAN! JADWAL BENTROK:\n\nMobil ini sudah dipesan pada:\n${conflictDates.join('\n')}\n\nSilakan pilih jam lain atau mobil lain.`); 
-                return; 
-            }
-            // --- AKHIR PENGECEKAN BENTROK ---
-
-            // PENANGANAN SUBMIT EDIT (Sudah Aman dari Bentrok)
+            // ===== PENANGANAN SUBMIT EDIT =====
             if (tempEditingData) {
                 btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Menyimpan Perubahan...";
                 btn.disabled = true;
@@ -587,11 +565,77 @@
                         alert("Perubahan berhasil disimpan!");
                         fetchPeminjamans(); 
                         resetFormState();
-                    } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = "Simpan Perubahan"; btn.disabled = false; }
-                } catch(e) { alert("Error koneksi."); btn.innerHTML = "Simpan Perubahan"; btn.disabled = false; }
+                    } else { alert(response.message || "Gagal mengedit."); btn.innerHTML = originalBtnText; btn.disabled = false; }
+                } catch(e) { alert("Error koneksi."); btn.innerHTML = originalBtnText; btn.disabled = false; }
                 return;
             }
+            // ===================================
 
+            const startDate = new Date(startDateStr);
+            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const dateArray = [];
+
+            if (endDate < startDate) { alert("Tanggal Akhir error!"); return; }
+
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            // SINKRONISASI REAL-TIME: Tarik data terbaru untuk mencegah tabrakan dengan orang lain yang baru submit detik ini
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Mengecek Sinkronisasi Jadwal...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const textData = await response.text();
+                const parsedData = JSON.parse(textData);
+                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
+
+                Peminjamans = rawPeminjamans.map(b => {
+                    let keyTujuan = Object.keys(b).find(k => k.toLowerCase().includes('tujuan') || k.toLowerCase().includes('keterang'));
+                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
+                    return { ...b, tujuan: textTujuan, date: formatDisplayDate(b.date), start: formatDisplayTime(b.start), end: formatDisplayTime(b.end) };
+                });
+                updateCalendar(); renderPeminjamanList();
+            } catch (error) {
+                console.error("Gagal Pre-flight sinkronisasi, melanjutkan dengan data lokal...");
+            }
+
+            // PENGECEKAN BENTROK FINAL (Setelah disinkronkan)
+            let hasConflict = false;
+            let conflictDates = [];
+
+            for (const date of dateArray) {
+                const conflict = Peminjamans.find(b => {
+                    if (b.date !== date || b.car !== car) return false;
+                    // Abaikan pengecekan jika dia mengedit data miliknya sendiri
+                    if (tempEditingData && b.id == tempEditingData.id) return false;
+                    
+                    return (start < b.end && end > b.start);
+                });
+
+                if (conflict && !isAdmin) { 
+                    hasConflict = true; 
+                    conflictDates.push(`• ${date} (Pukul ${conflict.start} - ${conflict.end})`); 
+                }
+            }
+
+            if (hasConflict) { 
+                alert(`GAGAL! JADWAL BENTROK:\n\nMobil ini ternyata baru saja dipesan pada waktu:\n${conflictDates.join('\n')}\n\nSilakan pilih jam lain atau mobil lain.`); 
+                btn.innerHTML = originalBtnText; 
+                btn.disabled = false;
+                checkAvailability(); // Memaksa dropdown warna merah muncul
+                return; 
+            }
+
+            // LOLOS SEMUA CEK - Lanjut ke Modal Persetujuan
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
             tempBookingData = { name, divisi, empWa, email, car, start, end, isBlock, dateArray, btn, tujuan };
 
             if(isAdmin && isBlock) { executePeminjaman(); } 
