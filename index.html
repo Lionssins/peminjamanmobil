@@ -358,12 +358,13 @@
 
                         <!-- KETENTUAN SK KLAIM BBM -->
                         <div class="md:col-span-2 mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-                            <span class="text-xs md:text-sm text-blue-800 font-semibold leading-relaxed text-justify">
-                                <i class="fas fa-info-circle mr-1"></i> Klaim BBM ini mengacu dan tunduk pada <b>SK No 001/SK/INTERNAL/I/2025</b> tentang Aturan Perjalanan Dinas Dan Konsumsi DBL Indonesia.
+                            <span class="text-xs md:text-sm text-blue-800 font-semibold leading-relaxed text-justify block">
+                                <i class="fas fa-info-circle mr-1"></i> Klaim BBM ini mengacu dan tunduk pada <b>SK No 001/SK/INTERNAL/I/2025</b> tentang Aturan Perjalanan Dinas Dan Konsumsi DBL Indonesia.<br>
+                                <span class="text-red-500 font-bold mt-1 block">*Gunakan email DBL Anda sebagai password untuk mendownload SK.</span>
                             </span>
-                            <a href="https://drive.google.com/file/d/1yc5w-SgHnn4JBAlOdn4Rod6W_5pOQW_E/view?usp=drive_link" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow flex items-center gap-2 whitespace-nowrap transition">
+                            <button type="button" onclick="downloadSK()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow flex items-center gap-2 whitespace-nowrap transition">
                                 <i class="fas fa-download"></i> Download SK
-                            </a>
+                            </button>
                         </div>
                     </div>
                     
@@ -555,6 +556,46 @@
             "Honda - L 1903 JR": "Honda BRV (Putih)"
         };
 
+        const listEmailDbl = [
+            "zulham@dblindonesia.com", "zein@dblindonesia.com", "zakiya@dblindonesia.com", "zahwa@dblindonesia.com", "yulita@dblindonesia.com",
+            "yudo@dblindonesia.com", "yondang@dblindonesia.com", "pras@dblindonesia.com", "resti@dblindonesia.com", "fafa@dblindonesia.com",
+            "vivin@dblindonesia.com", "tutut@dblindonesia.com", "test@dblindonesia.com", "tascia@dblindonesia.com", "tabita@dblindonesia.com",
+            "stephen@dblindonesia.com", "iant@dblindonesia.com", "sonny@dblindonesia.com", "fatim@dblindonesia.com", "sidik@dblindonesia.com",
+            "sherly@dblindonesia.com", "shena@dblindonesia.com", "aasha@dblindonesia.com", "via@dblindonesia.com", "sekar@dblindonesia.com",
+            "satrio@dblindonesia.com", "satria@dblindonesia.com", "sac@dblindonesia.com", "ryanmirza@dblindonesia.com", "rosyidan@dblindonesia.com",
+            "ronand@dblindonesia.com", "romiz@dblindonesia.com", "rizky@dblindonesia.com", "rivaldy@dblindonesia.com", "saputra@dblindonesia.com",
+            "rio@dblindonesia.com", "riana@dblindonesia.com", "rendyka@dblindonesia.com", "redaksi@dblindonesia.com", "ragil@dblindonesia.com",
+            "meta@dblindonesia.com", "putrinesia@dblindonesia.com", "puji@dblindonesia.com", "publicrelations@dblindonesia.com",
+            "persebayastore@dblindonesia.com", "persebayaacademy@dblindonesia.com", "persebayafuturelab@dblindonesia.com", "vivi@dblindonesia.com",
+            "arif@dblindonesia.com", "nuril@dblindonesia.com", "noviana@dblindonesia.com", "novia@dblindonesia.com", "nisrina@dblindonesia.com",
+            "nessa@dblindonesia.com", "nata@dblindonesia.com", "nanda@dblindonesia.com", "nanang@dblindonesia.com", "muti@dblindonesia.com",
+            "aries@dblindonesia.com", "alfian@dblindonesia.com", "adin@dblindonesia.com", "fatih@dblindonesia.com", "chaerul@dblindonesia.com",
+            "sany@dblindonesia.com", "diva@dblindonesia.com", "firman@dblindonesia.com", "macdonald@dblindonesia.com", "flo@dblindonesia.com",
+            "louise@dblindonesia.com", "lindadevina@dblindonesia.com", "laras@dblindonesia.com", "bimo@dblindonesia.com", "kiko@dblindonesia.com",
+            "kevin@dblindonesia.com", "kejurnas@dblindonesia.com", "juliana@dblindonesia.com", "jordhie@dblindonesia.com", "jfahamsa@dblindonesia.com",
+            "vinno@dblindonesia.com", "jingga@dblindonesia.com", "jeffri@dblindonesia.com", "azhar@dblindonesia.com", "ivo@dblindonesia.com",
+            "intan@dblindonesia.com", "indar@dblindonesia.com", "indah@dblindonesia.com", "ilham@dblindonesia.com", "puput@dblindonesia.com",
+            "dwinanda@dblindonesia.com", "hrd@dblindonesia.com", "payslip@dblindonesia.com", "hilari@dblindonesia.com", "hendra@dblindonesia.com",
+            "fuadi@dblindonesia.com", "agung@dblindonesia.com", "haksni@dblindonesia.com", "gun@dblindonesia.com", "gfr@dblindonesia.com",
+            "cece@dblindonesia.com", "gibran@dblindonesia.com", "ghazy@dblindonesia.com", "larissa@dblindonesia.com", "flavianus@dblindonesia.com",
+            "finance@dblindonesia.com", "fenty@dblindonesia.com", "febrigaluh@dblindonesia.com", "kohan@dblindonesia.com", "fattaah@dblindonesia.com",
+            "fachri@dblindonesia.com", "event@dblindonesia.com", "emka@dblindonesia.com", "elly@dblindonesia.com", "fira@dblindonesia.com",
+            "ekaadrian@dblindonesia.com", "eka@dblindonesia.com", "edo@dblindonesia.com", "dirga@dblindonesia.com", "donny@dblindonesia.com",
+            "valen@dblindonesia.com", "dina@dblindonesia.com", "dimaz@dblindonesia.com", "dika@dblindonesia.com", "dharma@dblindonesia.com",
+            "deviana@dblindonesia.com", "deni@dblindonesia.com", "defiana@dblindonesia.com", "dedy@dblindonesia.com", "headofficedblacademy@dblindonesia.com",
+            "dblplay@dblindonesia.com", "academy@dblindonesia.com", "dblstore@dblindonesia.com", "dahayu@dblindonesia.com", "creativelabs@dblindonesia.com",
+            "creativedesign@dblindonesia.com", "kristo@dblindonesia.com", "vava@dblindonesia.com", "candra@dblindonesia.com", "cahya@dblindonesia.com",
+            "businesspartnership@dblindonesia.com", "brigita@dblindonesia.com", "bramputra@dblindonesia.com", "billy@dblindonesia.com", "dennis@dblindonesia.com",
+            "bayu@dblindonesia.com", "bagus@dblindonesia.com", "azrul@dblindonesia.com", "azawhosale@dblindonesia.com", "azacustom@dblindonesia.com",
+            "azaprodev@dblindonesia.com", "ayuni@dblindonesia.com", "lea@dblindonesia.com", "aunurrio@dblindonesia.com", "aulia@dblindonesia.com",
+            "astrid@dblindonesia.com", "arya@dblindonesia.com", "ary@dblindonesia.com", "arthur@dblindonesia.com", "hakim@dblindonesia.com",
+            "aribah@dblindonesia.com", "aridwiki@dblindonesia.com", "gya@dblindonesia.com", "anziza@dblindonesia.com", "anwar@dblindonesia.com",
+            "anisa@dblindonesia.com", "ani@dblindonesia.com", "angger@dblindonesia.com", "andika@dblindonesia.com", "fiksis@dblindonesia.com",
+            "amingga@dblindonesia.com", "amanda@dblindonesia.com", "nevi@dblindonesia.com", "alifia@dblindonesia.com", "alief@dblindonesia.com",
+            "aldigo@dblindonesia.com", "ahmadhakim@dblindonesia.com", "agnes@dblindonesia.com", "agfi@dblindonesia.com", "adrian@dblindonesia.com",
+            "admin@dblindonesia.com", "adiprasetyo@dblindonesia.com", "abel@dblindonesia.com"
+        ];
+
         let isAdmin = false;
         let Peminjamans = [];
         let dataKaryawan = [];
@@ -670,7 +711,7 @@
             let a = document.createElement('a'); a.href = url; a.download = 'Laporan_Peminjaman.csv'; a.click();
         }
 
-        // ================= KLAIM BBM PDF ================= //
+        // ================= KLAIM BBM PDF & DOWNLOAD SK ================= //
         window.openKlaimModal = function() {
             document.getElementById('klaimModal').style.display = 'flex';
             let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
@@ -688,6 +729,18 @@
                 let n = k.nama || k.Nama || Object.values(k)[0];
                 ns.innerHTML += `<option value="${n}">${n}</option>`;
             });
+        };
+
+        // Fungsi baru untuk Verifikasi Email saat Download SK
+        window.downloadSK = function() {
+            let emailInput = prompt("Masukkan password (Gunakan Email DBL Anda) untuk mendownload SK:");
+            if (emailInput === null) return; 
+            
+            if (listEmailDbl.includes(emailInput.trim().toLowerCase())) {
+                window.open("https://drive.google.com/file/d/1yc5w-SgHnn4JBAlOdn4Rod6W_5pOQW_E/view?usp=drive_link", "_blank");
+            } else {
+                alert("Email tidak valid atau tidak terdaftar. Anda tidak memiliki akses untuk mendownload SK.");
+            }
         };
 
         // Membuat format Native HTML Inline untuk Visualisasi Jadwal agar di PDF tidak tertumpuk
