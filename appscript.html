@@ -1,6 +1,6 @@
-const SHEET_NAME = 'Data'; // Sesuaikan dengan nama Sheet pangkalan data Anda
-const ADMIN_EMAIL = 'admin.ga@perusahaananda.com'; // Email penerima notifikasi GA
-const CALENDAR_ID = 'primary'; // Menggunakan kalender utama akun pendeploy script
+const SHEET_NAME = 'Bookings'; 
+const ADMIN_EMAIL = 'jfahamsa@dblindonesia.com'; // Email Admin
+const CALENDAR_ID = 'primary'; 
 const TIMEZONE = 'Asia/Jakarta';
 
 function doPost(e) {
@@ -8,15 +8,23 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    const dataRange = sheet.getDataRange().getValues();
+    
+    // Menggunakan getDisplayValues() agar jam/tanggal dibaca sebagai teks murni
+    const dataRange = sheet.getDataRange().getDisplayValues();
     const headers = dataRange[0];
     
-    const idIndex = headers.findIndex(h => h.toLowerCase() === 'id');
-    const emailIndex = headers.findIndex(h => h.toLowerCase() === 'email');
-    const otpIndex = headers.findIndex(h => h.toLowerCase() === 'otp');
-    const eventIndex = headers.findIndex(h => h.toLowerCase() === 'eventid');
+    const idIndex = headers.findIndex(h => h.toString().toLowerCase().trim() === 'id');
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email'));
+    const otpIndex = headers.findIndex(h => h.toString().toLowerCase().includes('otp'));
+    const eventIndex = headers.findIndex(h => h.toString().toLowerCase().includes('event'));
+
+    if (idIndex === -1 || emailIndex === -1) {
+       return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ERROR: Kolom 'id' atau 'email' tidak ditemukan!" })).setMimeType(ContentService.MimeType.JSON);
+    }
     
-    // ACTION: ADD
+    // ==========================================
+    // ACTION: ADD (TAMBAH DATA TUNGGAL)
+    // ==========================================
     if (action === 'add') {
       let eventId = "";
       if (data.type !== 'block') {
@@ -25,87 +33,141 @@ function doPost(e) {
         const endTime = new Date(`${data.date}T${data.end}:00+07:00`);
         const description = `Tujuan: ${data.tujuan}\nNo WA: ${data.wa}\nEmail: ${data.email}`;
         
-        const event = CalendarApp.getCalendarById(CALENDAR_ID).createEvent(eventTitle, startTime, endTime, { description: description });
-        eventId = event.getId();
+        try {
+            const event = CalendarApp.getCalendarById(CALENDAR_ID).createEvent(eventTitle, startTime, endTime, { description: description });
+            eventId = event.getId();
+        } catch(err) {}
       }
 
       const newRow = [];
       for (let i = 0; i < headers.length; i++) {
-        const header = headers[i].toLowerCase();
+        const header = headers[i].toString().toLowerCase().trim();
         if (header === 'id') newRow.push(data.id);
         else if (header === 'name' || header === 'nama') newRow.push(data.name);
         else if (header === 'divisi') newRow.push(data.divisi);
         else if (header === 'wa' || header === 'no wa') newRow.push(data.wa);
-        else if (header === 'email') newRow.push(data.email);
+        else if (header.includes('email')) newRow.push(data.email);
         else if (header === 'car' || header === 'mobil') newRow.push(data.car);
         else if (header === 'tujuan') newRow.push(data.tujuan);
         else if (header === 'date' || header === 'tanggal') newRow.push(data.date);
         else if (header === 'start' || header === 'jam mulai') newRow.push(data.start);
         else if (header === 'end' || header === 'jam selesai') newRow.push(data.end);
         else if (header === 'type' || header === 'tipe') newRow.push(data.type);
-        else if (header === 'eventid') newRow.push(eventId);
-        else if (header === 'otp') newRow.push("");
+        else if (header.includes('event')) newRow.push(eventId);
+        else if (header.includes('otp')) newRow.push("");
         else newRow.push("");
       }
       sheet.appendRow(newRow);
 
-      if (data.type !== 'block' && data.email && data.email !== "-") {
-        MailApp.sendEmail({ to: data.email, subject: `Konfirmasi Peminjaman Mobil: ${data.car}`, body: `Halo ${data.name},\n\nPemesanan mobil Anda telah berhasil dicatat:\nMobil: ${data.car}\nTanggal: ${data.date}\nWaktu: ${data.start} - ${data.end} WIB\n\nTerima kasih,\nTim General Affairs` });
-        MailApp.sendEmail({ to: ADMIN_EMAIL, subject: `Pemesanan Baru - ${data.car}`, body: `Pemesanan mobil:\nNama: ${data.name}\nMobil: ${data.car}\nTanggal: ${data.date}\nWaktu: ${data.start} - ${data.end}\nTujuan: ${data.tujuan}` });
+      // --- MENGUBAH DATA DARI WEB MENJADI PDF & EMAIL ---
+      if (data.type !== 'block' && data.email && data.email.includes("@") && data.sendEmail === true) {
+        sendEmailWithPDF(data);
       }
       return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
     
-    // ACTION: REQUEST OTP (Otomatis ambil email dari Sheet)
+    // ==========================================
+    // ACTION: BATCH ADD (MULTI HARI SEKALIGUS) 
+    // ==========================================
+    if (action === 'batchAdd') {
+      const bookings = data.data; 
+      const newRows = [];
+      
+      bookings.forEach(b => {
+        let eventId = "";
+        if (b.type !== 'block') {
+          try {
+            const eventTitle = `[Mobil] ${b.car} - ${b.name} (${b.divisi})`;
+            const startTime = new Date(`${b.date}T${b.start}:00+07:00`);
+            const endTime = new Date(`${b.date}T${b.end}:00+07:00`);
+            const event = CalendarApp.getCalendarById(CALENDAR_ID).createEvent(eventTitle, startTime, endTime, { description: `Tujuan: ${b.tujuan}\nNo WA: ${b.wa}\nEmail: ${b.email}` });
+            eventId = event.getId();
+          } catch(err) {}
+        }
+
+        const newRow = [];
+        for (let i = 0; i < headers.length; i++) {
+          const header = headers[i].toString().toLowerCase().trim();
+          if (header === 'id') newRow.push(b.id);
+          else if (header === 'name' || header === 'nama') newRow.push(b.name);
+          else if (header === 'divisi') newRow.push(b.divisi);
+          else if (header === 'wa' || header === 'no wa') newRow.push(b.wa);
+          else if (header.includes('email')) newRow.push(b.email);
+          else if (header === 'car' || header === 'mobil') newRow.push(b.car);
+          else if (header === 'tujuan') newRow.push(b.tujuan);
+          else if (header === 'date' || header === 'tanggal') newRow.push(b.date);
+          else if (header === 'start' || header === 'jam mulai') newRow.push(b.start);
+          else if (header === 'end' || header === 'jam selesai') newRow.push(b.end);
+          else if (header === 'type' || header === 'tipe') newRow.push(b.type);
+          else if (header.includes('event')) newRow.push(eventId);
+          else if (header.includes('otp')) newRow.push("");
+          else newRow.push("");
+        }
+        newRows.push(newRow);
+      });
+
+      if (newRows.length > 0) {
+        sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, headers.length).setValues(newRows);
+      }
+
+      const firstBooking = bookings[0];
+      if (firstBooking && firstBooking.type !== 'block' && firstBooking.email && firstBooking.sendEmail) {
+        sendEmailWithPDF(firstBooking);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ==========================================
+    // ACTION: REQUEST OTP
+    // ==========================================
     if (action === 'requestOTP') {
-      const idStr = String(data.id);
+      const idStr = String(data.id).trim();
       for (let i = 1; i < dataRange.length; i++) {
-        if (String(dataRange[i][idIndex]) === idStr) {
-          const userEmail = dataRange[i][emailIndex];
+        if (String(dataRange[i][idIndex]).trim() === idStr) {
+          const userEmail = String(dataRange[i][emailIndex]).trim();
           if(userEmail && userEmail !== "-" && userEmail.includes("@")) {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             sheet.getRange(i + 1, otpIndex + 1).setValue(otp);
-            
             MailApp.sendEmail({
               to: userEmail,
-              subject: "Kode OTP Sistem Peminjaman Mobil",
-              body: `Kode OTP Anda adalah: ${otp}\nMasukkan kode ini untuk melanjutkan perubahan atau penghapusan pesanan Anda.`
+              subject: "🔒 Kode OTP Sistem Peminjaman Mobil",
+              body: `Halo,\n\nKode OTP Anda adalah: ${otp}\n\nMasukkan 6 digit angka ini pada web untuk melanjutkan proses edit atau hapus jadwal peminjaman.`
             });
-            
-            // Sensor email untuk keamanan saat dikirim ke Frontend
             let masked = userEmail.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length));
             return ContentService.createTextOutput(JSON.stringify({ status: "success", email: masked })).setMimeType(ContentService.MimeType.JSON);
           } else {
-             return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Email tidak valid pada data ini!" })).setMimeType(ContentService.MimeType.JSON);
+             return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Email tidak valid/kosong!" })).setMimeType(ContentService.MimeType.JSON);
           }
         }
       }
       return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Pesanan tidak ditemukan!" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ACTION: VERIFY OTP (Untuk mode Edit sebelum memuat form)
+    // ==========================================
+    // ACTION: VERIFY OTP
+    // ==========================================
     if (action === 'verifyOTP') {
-      const idStr = String(data.id);
+      const idStr = String(data.id).trim();
       for (let i = 1; i < dataRange.length; i++) {
-        if (String(dataRange[i][idIndex]) === idStr && String(dataRange[i][otpIndex]) === String(data.otp)) {
+        if (String(dataRange[i][idIndex]).trim() === idStr && String(dataRange[i][otpIndex]).trim() === String(data.otp).trim()) {
            return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
         }
       }
       return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "OTP Salah!" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ACTION: DELETE (Dengan Verifikasi OTP / Admin)
+    // ==========================================
+    // ACTION: DELETE 
+    // ==========================================
     if (action === 'delete') {
-      const idStr = String(data.id);
+      const idStr = String(data.id).trim();
       const isOtpValid = (data.otp === "admin");
-      
       for (let i = 1; i < dataRange.length; i++) {
-        if (String(dataRange[i][idIndex]) === idStr) {
-          if (isOtpValid || String(dataRange[i][otpIndex]) === String(data.otp)) {
+        if (String(dataRange[i][idIndex]).trim() === idStr) {
+          if (isOtpValid || String(dataRange[i][otpIndex]).trim() === String(data.otp).trim()) {
              const oldEventId = dataRange[i][eventIndex];
-             if (oldEventId) {
-                 try { CalendarApp.getCalendarById(CALENDAR_ID).getEventById(oldEventId).deleteEvent(); } catch(e) {}
-             }
+             if (oldEventId) { try { CalendarApp.getCalendarById(CALENDAR_ID).getEventById(oldEventId).deleteEvent(); } catch(e) {} }
              sheet.deleteRow(i + 1);
              return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
           } else {
@@ -113,22 +175,25 @@ function doPost(e) {
           }
         }
       }
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ID tidak ditemukan!" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ACTION: EDIT (Dengan Verifikasi OTP / Admin)
+    // ==========================================
+    // ACTION: EDIT 
+    // ==========================================
     if (action === 'edit') {
-      const idStr = String(data.id);
+      const idStr = String(data.id).trim();
       const isOtpValid = (data.otp === "admin");
       let targetRowIndex = -1;
 
       for (let i = 1; i < dataRange.length; i++) {
-        if (String(dataRange[i][idIndex]) === idStr) {
-           if (isOtpValid || String(dataRange[i][otpIndex]) === String(data.otp)) { targetRowIndex = i; break; }
+        if (String(dataRange[i][idIndex]).trim() === idStr) {
+           if (isOtpValid || String(dataRange[i][otpIndex]).trim() === String(data.otp).trim()) { targetRowIndex = i; break; } 
+           else { return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "OTP Salah!" })).setMimeType(ContentService.MimeType.JSON); }
         }
       }
 
       if(targetRowIndex !== -1) {
-         // Update Kalender
          const oldEventId = dataRange[targetRowIndex][eventIndex];
          if (oldEventId) { try { CalendarApp.getCalendarById(CALENDAR_ID).getEventById(oldEventId).deleteEvent(); } catch(e) {} }
          
@@ -141,28 +206,27 @@ function doPost(e) {
             newEventId = event.getId();
          }
 
-         // Memetakan baris yang diperbarui
          const updatedRow = [];
          for (let i = 0; i < headers.length; i++) {
-            const header = headers[i].toLowerCase();
+            const header = headers[i].toString().toLowerCase().trim();
             if (header === 'name' || header === 'nama') updatedRow.push(data.name);
             else if (header === 'divisi') updatedRow.push(data.divisi);
             else if (header === 'wa' || header === 'no wa') updatedRow.push(data.wa);
-            else if (header === 'email') updatedRow.push(data.email);
+            else if (header.includes('email')) updatedRow.push(data.email);
             else if (header === 'car' || header === 'mobil') updatedRow.push(data.car);
             else if (header === 'tujuan') updatedRow.push(data.tujuan);
             else if (header === 'date' || header === 'tanggal') updatedRow.push(data.date);
             else if (header === 'start' || header === 'jam mulai') updatedRow.push(data.start);
             else if (header === 'end' || header === 'jam selesai') updatedRow.push(data.end);
-            else if (header === 'eventid') updatedRow.push(newEventId);
-            else if (header === 'otp') updatedRow.push(""); // Reset OTP setelah edit
-            else updatedRow.push(dataRange[targetRowIndex][i]); // Pertahankan data lain
+            else if (header.includes('event')) updatedRow.push(newEventId);
+            else if (header.includes('otp')) updatedRow.push(""); 
+            else updatedRow.push(dataRange[targetRowIndex][i]); 
          }
          
          sheet.getRange(targetRowIndex + 1, 1, 1, headers.length).setValues([updatedRow]);
          return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
       } else {
-         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Data tidak ditemukan atau OTP salah." })).setMimeType(ContentService.MimeType.JSON);
+         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Data tidak ditemukan." })).setMimeType(ContentService.MimeType.JSON);
       }
     }
 
@@ -171,25 +235,113 @@ function doPost(e) {
   }
 }
 
+// ==================================================
+// FUNGSI KHUSUS: MEMBUAT & MENGIRIM PDF
+// ==================================================
+function sendEmailWithPDF(data) {
+  let pdfBlob = null;
+  
+  // 1. Buat kerangka Surat Persetujuan menggunakan HTML (Telah Diupdate dengan 8 Poin Syarat & Ketentuan)
+  let htmlTemplate = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="text-align: center; color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 10px;">
+        SURAT PERSETUJUAN PEMINJAMAN MOBIL
+      </h2>
+      <p>Berikut adalah detail peminjaman kendaraan operasional yang telah direkam oleh sistem:</p>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <tr><td style="padding: 8px; width: 150px; font-weight: bold;">Nama Peminjam</td><td>: ${data.name}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Divisi</td><td>: ${data.divisi}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">No. WhatsApp</td><td>: ${data.wa}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Kendaraan</td><td>: ${data.car}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Tujuan</td><td>: ${data.tujuan}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Tanggal</td><td>: ${data.dateText || data.date}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Waktu</td><td>: ${data.start} - ${data.end} WIB</td></tr>
+      </table>
+
+      <h3 style="margin-top: 30px; font-size: 14px;">Syarat & Ketentuan Berlaku:</h3>
+      <ol style="font-size: 12px; color: #555; padding-left: 20px; text-align: justify;">
+        <li style="margin-bottom: 5px;">Bertanggung jawab sepenuhnya terhadap kehilangan dan kerusakan kendaraan selama pemakaian.</li>
+        <li style="margin-bottom: 5px;">Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat, dan menjaga kebersihan.</li>
+        <li style="margin-bottom: 5px;">Tidak mengemudikan kendaraan diatas batas maksimum kecepatan dan mentaati peraturan lalu lintas.</li>
+        <li style="margin-bottom: 5px;">Mengisi kembali BBM yang terpakai sesuai dengan aturan (minimal seperti semula sebelum memakai).</li>
+        <li style="margin-bottom: 5px;">Mengembalikan mobil sesuai dengan tanggal dan waktu yang sudah tertera pada form.</li>
+        <li style="margin-bottom: 5px;">Apabila terjadi keterlambatan pengembalian mobil, permintaan peminjaman mobil ditangguhkan selama 30 hari.</li>
+        <li style="margin-bottom: 5px;">Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : Lita).</li>
+        <li style="margin-bottom: 5px;">Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan BBM dikirim by WA.</li>
+      </ol>
+
+      <div style="margin-top: 40px; text-align: right;">
+        <p style="margin-bottom: 5px;">Disetujui secara digital oleh,</p>
+        <p style="font-weight: bold;">${data.name}</p>
+        <br/>
+        ${data.qrBase64 ? `<img src="${data.qrBase64}" width="120" style="border: 1px solid #ccc; padding: 5px;" alt="Tanda Tangan Digital" />` : ''}
+      </div>
+    </div>
+  `;
+
+  // 2. Konversi HTML menjadi file PDF nyata
+  try {
+      pdfBlob = Utilities.newBlob(htmlTemplate, MimeType.HTML)
+                         .getAs(MimeType.PDF)
+                         .setName(`Surat_Persetujuan_${data.name.replace(/\s+/g, '_')}.pdf`);
+  } catch(e) {
+      // Lanjut kirim email tanpa attachment jika pembuatan PDF gagal
+  }
+
+  // 3. Setup Pengiriman Email ke Peminjam
+  const bodyPeminjam = `Halo ${data.name},\n\nPemesanan mobil operasional Anda telah BERHASIL dicatat.\n\nSurat persetujuan resmi telah kami lampirkan dalam dokumen PDF pada email ini.\n\nDetail Singkat:\nMobil: ${data.car}\nTanggal: ${data.dateText || data.date}\nJam: ${data.start} - ${data.end} WIB\n\nTerima kasih,\nAdmin General Affairs`;
+
+  let mailOptions = {
+      to: data.email,
+      subject: `Konfirmasi Peminjaman & Persetujuan: ${data.car}`,
+      body: bodyPeminjam
+  };
+  
+  // Menempelkan PDF jika berhasil di-generate
+  if (pdfBlob) {
+      mailOptions.attachments = [pdfBlob]; 
+  }
+  
+  MailApp.sendEmail(mailOptions);
+  
+  // 4. Notifikasi ke Admin (Sudah ditambah informasi No. WA)
+  MailApp.sendEmail({ 
+      to: ADMIN_EMAIL, 
+      subject: `Jadwal Baru: ${data.name} - ${data.car}`, 
+      body: `Jadwal Baru Masuk!\n\nNama: ${data.name} (${data.divisi})\nNo. WA: ${data.wa}\nMobil: ${data.car}\nTanggal: ${data.dateText || data.date}\nWaktu: ${data.start} - ${data.end}\nTujuan: ${data.tujuan}\nEmail: ${data.email}` 
+  });
+}
+
 function doGet() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  const dataRange = sheet.getDataRange().getValues();
+  const dataRange = sheet.getDataRange().getDisplayValues();
   const headers = dataRange[0];
   const Peminjamans = [];
+  
   for (let i = 1; i < dataRange.length; i++) {
     const row = dataRange[i];
     let obj = {};
-    for (let j = 0; j < headers.length; j++) obj[headers[j].toLowerCase()] = row[j];
-    Peminjamans.push(obj);
+    for (let j = 0; j < headers.length; j++) {
+        let key = headers[j].toString().toLowerCase().trim();
+        if (key.includes('email')) key = 'email';
+        if (key.includes('event')) key = 'eventid';
+        obj[key] = row[j];
+    }
+    if(obj.id) Peminjamans.push(obj); 
   }
   
   const sheetKaryawan = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Karyawan");
   let karyawan = [];
   if (sheetKaryawan) {
-    const karData = sheetKaryawan.getDataRange().getValues();
+    const karData = sheetKaryawan.getDataRange().getDisplayValues();
+    const karHeaders = karData[0];
     for (let i = 1; i < karData.length; i++) {
       let kObj = {};
-      for (let j = 0; j < karData[0].length; j++) kObj[karData[0][j].toLowerCase()] = karData[i][j];
+      for (let j = 0; j < karHeaders.length; j++) {
+          let kKey = karHeaders[j].toString().toLowerCase().trim();
+          kObj[kKey] = karData[i][j];
+      }
       karyawan.push(kObj);
     }
   }
